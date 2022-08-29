@@ -1,15 +1,16 @@
 #!/bin/bash
 echo "Creating conda environment"
-conda create -f environment.yaml
+conda env create -f environment.yaml
 
-# # get the CycleGAN code and dependencies
+# get the CycleGAN code and dependencies
 git clone https://github.com/funkey/neuromatch_xai
 mv neuromatch_xai/cycle_gan .
 
-
-# Doanload checkpoints and data
+# Download checkpoints and data
 wget 'https://www.dropbox.com/sh/ucpjfd3omjieu80/AAAvZynLtzvhyFx7_jwVhUK2a?dl=0&preview=data.zip' -O resources.zip
-# Unzip the checkpoints
+# Unzip the checkpoints and data
+unzip -o resources.zip data.zip
+unzip -o resources.zip checkpoints.zip
 unzip -o checkpoints.zip 'checkpoints/synapses/*'
 unzip -o data.zip 'data/raw/synapses/*'
 # make sure the order of classes matches the pretrained model
