@@ -7,7 +7,7 @@ git clone https://github.com/funkey/neuromatch_xai
 mv neuromatch_xai/cycle_gan .
 
 # Download checkpoints and data
-wget 'https://www.dropbox.com/sh/ucpjfd3omjieu80/AAAvZynLtzvhyFx7_jwVhUK2a?dl=0&preview=data.zip' -O resources.zip
+wget 'https://www.dropbox.com/s/fbloj6iitlh2kpw/resources.zip?dl=1' -O resources.zip
 # Unzip the checkpoints and data
 unzip -o resources.zip data.zip
 unzip -o resources.zip checkpoints.zip
