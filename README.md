@@ -13,6 +13,7 @@ This is a GPU-hungry exercise so you're going to need all the GPU memory you can
 
 Next, run the setup script. It might take a few minutes.
 ```
+cd 09_knowledge_extraction
 bash setup.sh
 ```
 This will:
