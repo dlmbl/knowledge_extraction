@@ -26,7 +26,7 @@
 #
 # %% [markdown]
 # <div class="alert alert-danger">
-# Set your python kernel to <code>knowledge-extraction</code>
+# Set your python kernel to <code>09_knowledge_extraction</code>
 # </div>
 
 # %% [markdown]
@@ -1283,6 +1283,10 @@ for i in tqdm(range(iterations)):
 
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h1>Checkpoint 3</h1>
+# You've now learned the basics of what makes up a CycleGAN, and details on how to perform adversarial training.
+# The same method can be used to create a CycleGAN with different basic elements.
+# For example, you can change the archictecture of the generators, or of the discriminator to better fit your data in the future.
+#
 # You know the drill... let us know on Element!
 # </div>
 
@@ -1497,6 +1501,7 @@ print(
 # %% [markdown]
 # We're going to look at the confusion matrices for the counterfactuals, and compare it to that of the real images.
 
+
 # %% tags=[]
 @torch.no_grad()
 def evaluate_cm_gan(dataloader, name):
@@ -1506,30 +1511,31 @@ def evaluate_cm_gan(dataloader, name):
     preds = []
     prob_correct = []
     for x, y in tqdm(dataloader, name):
-        
         x, y = x.to(device), y.to(device)
-        
+
         logits = model(x)
         probs = torch.nn.Softmax(dim=1)(logits)
         batch_predictions = torch.argmax(probs, dim=1)
-        
+
         # append predictions and groundtruth to our big list,
         # converting `tensor` objects to simple values through .item()
         preds.extend([k.item() for k in batch_predictions])
         ys.extend([k.item() for k in y])
-        
-        prob_correct.extend([prob[target.item()].item() for prob, target in zip(probs, y)])
+
+        prob_correct.extend(
+            [prob[target.item()].item() for prob, target in zip(probs, y)]
+        )
     return (preds, ys, prob_correct)
 
 
 # %% tags=[]
 def test_cm_gan(dataset):
-    '''Evaluate prediction accuracy on the test dataset.'''
+    """Evaluate prediction accuracy on the test dataset."""
     # Run the evaluation
     model.eval()
     dataloader = DataLoader(dataset, batch_size=32)
-    
-    return evaluate_cm_gan(dataloader, 'test')
+
+    return evaluate_cm_gan(dataloader, "test")
 
 
 # %% tags=[]
@@ -1548,11 +1554,11 @@ cm_analysis(predictions, targets, names=classes, labels=labels)
 # %% [markdown] tags=[]
 # <div class="alert alert-banner alert-warning">
 # <h4>Questions</h4>
-#     
+#
 # - What would you expect the confusion matrix for the counterfactuals to look like? Why?
 # - Do the two directions of the CycleGAN work equally as well?
 # - Can you think of anything that might have made it more difficult, or easier, to translate in a one direction vs the other?
-#     
+#
 # </div>
 
 # %% [markdown]
