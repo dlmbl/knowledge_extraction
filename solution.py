@@ -1,15 +1,16 @@
 # ---
 # jupyter:
 #   jupytext:
+#     cell_metadata_filter: all
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
 #       jupytext_version: 1.14.7
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python [conda env:09_knowledge_extraction]
 #     language: python
-#     name: python3
+#     name: conda-env-09_knowledge_extraction-py
 # ---
 
 # %% [markdown]
@@ -17,7 +18,7 @@
 #
 # In the following exercise we will train a convolutional neural network to classify electron microscopy images of Drosophila synapses, based on which neurotransmitter they contain. We will then train a CycleGAN and use a method called Discriminative Attribution from Counterfactuals (DAC) to understand how the network performs its classification, effectively going back from prediction to image data.
 #
-# ![synister.png](attachment:synister.png)
+# ![synister.png](assets/synister.png)
 #
 # ### Acknowledgments
 #
@@ -49,7 +50,7 @@
 # First, we split the available images into a train, validation, and test dataset with proportions of 0.7, 0.15, and 0.15, respectively. Each image should be returned as a 2D `numpy` array with float values between 0 and 1. The label for each image should be the name of the directory for this class (e.g., `0_gaba`).
 #
 
-# %%
+# %% tags=[]
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 from torchvision.datasets import ImageFolder
@@ -102,7 +103,7 @@ train_dataset, validation_dataset, test_dataset = random_split(
 # </div>
 
 
-# %%
+# %% tags=[]
 # compute class weights in training dataset for balanced sampling
 def balanced_sampler(dataset):
     # Get a list of targets from the dataset
@@ -138,7 +139,7 @@ sampler = balanced_sampler(train_dataset)
 # We additionally create a validation data loader and a test data loader.
 # These do not need to be sampled in a special way, and can load more images at once because the evaluation pass is less memory intensive than the training pass.
 
-# %%
+# %% tags=[]
 # this data loader will serve 8 images in a "mini-batch" at a time
 dataloader = DataLoader(train_dataset, batch_size=8, drop_last=True, sampler=sampler)
 # These data laoders serve 32 images in a "mini-batch"
@@ -148,7 +149,7 @@ test_dataloader = DataLoader(validation_dataset, batch_size=32)
 # %% [markdown]
 # The cell below visualizes a single, randomly chosen batch from the training data loader. Feel free to execute this cell multiple times to get a feeling for the dataset and that your sampler gives batches of evenly distributed synapse types.
 
-# %%
+# %% tags=[]
 # %matplotlib inline
 from matplotlib import pyplot as plt
 
@@ -195,7 +196,7 @@ for x, y in dataloader:
 # </div>
 
 
-# %%
+# %% tags=[]
 class Vgg2D(torch.nn.Module):
     def __init__(
         self,
@@ -277,7 +278,7 @@ class Vgg2D(torch.nn.Module):
 # - Create an Adam optimizer and set its learning rate
 # </div>
 
-# %%
+# %% tags=[]
 # get the size of our images
 for x, y in train_dataset:
     input_size = x.shape
@@ -286,13 +287,13 @@ for x, y in train_dataset:
 # create the model to train
 model = Vgg2D(input_size)
 
-# %%
+# %% tags=[]
 # use a GPU, if it is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 print(f"Will use device {device} for training")
 
-# %%
+# %% tags=[]
 loss = ...
 optimizer = ...
 
@@ -306,7 +307,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 # %% [markdown]
 # The next cell defines some convenience functions for training, validation, and testing:
 
-# %%
+# %% tags=[]
 from tqdm import tqdm
 
 
@@ -359,9 +360,9 @@ def evaluate(dataloader, name=""):
 # %% [markdown]
 # We are ready to train. After each epoch (roughly going through each training image once), we report the training loss and the validation accuracy.
 
-# %%
+# %% tags=[]
 for epoch in range(3):
-    epoch_loss = train()
+    epoch_loss = train(dataloader)
     print(f"Epoch {epoch}, training loss={epoch_loss}")
 
     accuracy = evaluate(validation_dataloader, "Validation")
@@ -370,19 +371,19 @@ for epoch in range(3):
 # %% [markdown]
 # Let's watch your model train!
 #
-# ![model_train.jpeg](attachment:model_train.jpeg)
+# <img src="assets/model_train.jpg" alt="drawing" width="500px"/>
 
 # %% [markdown]
 # And now, let's test it!
 
-# %%
+# %% tags=[]
 accuracy = evaluate(test_dataloader, "Testing")
 print(f"Final test accuracy: {accuracy}")
 
 # %% [markdown]
 # If you're unhappy with the accuracy above (which you should be...) we pre-trained a model for you for many more epochs. You can load it with the next cell.
 
-# %%
+# %% tags=[]
 # TODO change this to True and run this cell if you want a shortcut
 yes_I_want_the_pretrained_model = True
 
@@ -409,11 +410,12 @@ if yes_I_want_the_pretrained_model:
 #
 # </div>
 #
-# ![confusion_matrix.png](attachment:256a54ec-d4cd-4952-84ca-00ebf0652b4e.png)
+# ![confusion_matrix.png](assets/confusion_matrix.png)
 
 # %% [markdown]
+#
 
-# %%
+# %% tags=[]
 # TODO: return a paired list of predicted class vs ground-truth to produce a confusion matrix
 from tqdm import tqdm
 
@@ -466,13 +468,13 @@ def evaluate_cm(dataloader, name):
     return (predictions, ground_truths)
 
 
-# %%
+# %% tags=[]
 prediction, groundtruth = evaluate_cm(test_dataloader, "test")
 
 # %% [markdown]
 # Let's plot the confusion matrix.
 
-# %%
+# %% tags=[]
 import pandas as pd
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
@@ -566,7 +568,7 @@ cm_analysis(prediction, groundtruth, names=names)
 #
 # Here we will look at an example of an attribution method called [Integrated Gradients](https://captum.ai/docs/extension/integrated_gradients). If you have a bit of time, have a look at this [super fun exploration of attribution methods](https://distill.pub/2020/attribution-baselines/), especially the explanations on Integrated Gradients.
 
-# %%
+# %% tags=[]
 x, y = next(iter(dataloader))
 x = x.to(device)
 y = y.to(device)
@@ -579,7 +581,7 @@ y = y.to(device)
 #
 # </div>
 
-# %%
+# %% tags=[]
 from captum.attr import IntegratedGradients
 
 ############### Exercise 2.1 TODO ############
@@ -600,7 +602,7 @@ integrated_gradients = IntegratedGradients(model)
 # Generated attributions on integrated gradients
 attributions = integrated_gradients.attribute(x, target=y)
 
-# %%
+# %% tags=[]
 attributions = (
     attributions.cpu().numpy()
 )  # Move the attributions from the GPU to the CPU, and turn then into numpy arrays for future processing
@@ -611,7 +613,7 @@ attributions = np.array(
 # %% [markdown]
 # Here is an example for an image, and its corresponding attribution.
 
-# %%
+# %% tags=[]
 fig, (ax1, ax2) = plt.subplots(1, 2)
 ax1.imshow(x.cpu()[0].squeeze(), cmap="gray")
 ax2.imshow(attributions[0].squeeze(), cmap="coolwarm")
@@ -621,7 +623,7 @@ ax2.imshow(attributions[0].squeeze(), cmap="coolwarm")
 #
 # The attributions that we see are grainy and difficult to interpret because they are a pixel-wise attribution. We apply some smoothing and thresholding on the attributions so that they represent region masks rather than pixel masks. The following code is runnable with no modification.
 
-# %%
+# %% tags=[]
 import cv2
 import copy
 
@@ -679,7 +681,7 @@ def interactive_attribution(idx=0, threshold=0.5):
 # Tell us what you see on Element!
 # </div>
 
-# %%
+# %% tags=[]
 from ipywidgets import interact
 
 interact(
@@ -743,7 +745,7 @@ interact(
 # In this example, we will train a CycleGAN network that translates GABAergic synapses to acetylcholine synapses (you can also train other pairs too by changing the classes below).
 
 
-# %%
+# %% tags=[]
 def class_dir(name):
     return f"{class_to_idx[name]}_{name}"
 
@@ -777,7 +779,7 @@ classes = ["gaba", "acetylcholine"]
 # </div>
 
 
-# %%
+# %% tags=[]
 # Utility functions to get a subset of classes
 def get_indices(dataset, classes):
     """Get the indices of elements of classA and classB in the dataset."""
@@ -826,7 +828,7 @@ gan_val_dataset = Subset(full_dataset, gan_val_idx)
 # %% [markdown]
 # ### The model
 #
-# ![cycle.png](attachment:79141d1d-6c9e-41ed-a396-0fd5fe7952c8.png)
+# ![cycle.png](assets/cyclegan.png)
 #
 # In the following, we create a [CycleGAN model](https://arxiv.org/pdf/1703.10593.pdf). It is a Generative Adversarial model that is trained to turn one class of images X (for us, GABA) into a different class of images Y (for us, Acetylcholine).
 #
@@ -843,7 +845,7 @@ gan_val_dataset = Subset(full_dataset, gan_val_idx)
 #    - DX tries to recognize fake GABA images: F will need to create images realistic and GABAergic enough to trick it.
 #    - DY tries to recognize fake Acetylcholine images: G will need to create images realistic and cholinergic enough to trick it.
 
-# %%
+# %% tags=[]
 from torch import nn
 import functools
 from cycle_gan.models.networks import ResnetGenerator, NLayerDiscriminator, GANLoss
@@ -952,7 +954,7 @@ class CycleGAN(nn.Module):
         return discrimination
 
 
-# %%
+# %% tags=[]
 cyclegan = CycleGAN(*classes)
 cyclegan.to(device)
 print(f"Will use device {device} for training")
@@ -962,7 +964,7 @@ print(f"Will use device {device} for training")
 # You will notice above that the `CycleGAN` takes an input in the form of a dictionary, but our datasets and data-loaders return the data in the form of two tensors. Below are two utility functions that will swap from data from one to the other.
 
 
-# %%
+# %% tags=[]
 # Utility function to go to/from dictionaries/x,y tensors
 def get_as_xy(dictionary):
     x = torch.cat([arr for arr in dictionary.values()])
@@ -998,10 +1000,10 @@ def get_as_dictionary(x, y):
 # 2. Since the two networks are fighting each other, it is important to make sure that neither of them can cheat with information espionage. The CycleGAN implementation below is a turn-by-turn fight: we train the generator(s) and the discriminator(s) in alternating steps. When a model is not training, we will restrict its access to information by using `set_requries_grad` to `False`.
 # </div>
 
-# %%
+# %% tags=[]
 from cycle_gan.util.image_pool import ImagePool
 
-# %%
+# %% tags=[]
 criterionIdt = nn.L1Loss()
 criterionCycle = nn.L1Loss()
 criterionGAN = GANLoss("lsgan")
@@ -1027,7 +1029,7 @@ optimizer_d = torch.optim.Adam(cyclegan.discriminators.parameters(), lr=1e-4)
 # </div>
 
 
-# %%
+# %% tags=[]
 def set_requires_grad(module, value=True):
     """Sets `requires_grad` on a `module`'s parameters to `value`"""
     for param in module.parameters():
@@ -1212,7 +1214,7 @@ def train_gan(reals):
 # Let's add a quick plotting function before we begin training...
 
 
-# %%
+# %% tags=[]
 def plot_gan_output(sample=None):
     # Get the input from the test dataset
     if sample is None:
@@ -1249,21 +1251,21 @@ def plot_gan_output(sample=None):
 # Training! Let's train the CycleGAN one batch a time, plotting the output every so often to see how it is getting on. This exercise has no TODOs, so just run the next few cells and watch as synapses begin to form.
 # </div>
 
-# %%
+# %% tags=[]
 # Get a balanced sampler that only considers the two classes
 sampler = balanced_sampler(gan_train_dataset)
 dataloader = DataLoader(
     gan_train_dataset, batch_size=8, drop_last=True, sampler=sampler
 )
 
-# %%
+# %% tags=[]
 # Number of iterations to train for (note: this is not *nearly* enough to get ideal results)
 iterations = 500
 # Determines how often to plot outputs to see how the network is doing. I recommend scaling your `print_every` to your `iterations`.
 # For example, if you're running `iterations=5` you can `print_every=1`, but `iterations=1000` and `print_every=1` will be a lot of prints.
 print_every = 100
 
-# %%
+# %% tags=[]
 for i in tqdm(range(iterations)):
     x, y = next(iter(dataloader))
     x = x.to(device)
@@ -1276,8 +1278,8 @@ for i in tqdm(range(iterations)):
 
 # %% [markdown]
 # ...this time again.
-# ![model_train_2.jpeg](attachment:model_train_2.jpeg)
 #
+# <img src="assets/model_train.jpg" alt="drawing" width="500px"/>
 
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h1>Checkpoint 3</h1>
@@ -1295,7 +1297,7 @@ for i in tqdm(range(iterations)):
 #
 # To continue, interrupt the kernel and continue with the next one, which will just use one of the pretrained CycleGAN models for the synapse dataset.
 
-# %%
+# %% tags=[]
 from pathlib import Path
 import torch
 
@@ -1324,17 +1326,17 @@ load_pretrained(cyclegan, "./checkpoints/synapses/cycle_gan/", *classes)
 # %% [markdown]
 # Let's look at some examples. Can you pick up on the differences between original, the counter-factual, and the reconstruction?
 
-# %%
+# %% tags=[]
 for i in range(5):
     plot_gan_output()
 
 # %% [markdown]
 # We're going to apply the CycleGAN to our test dataset, and save the results to be reused later.
 
-# %%
+# %% tags=[]
 dataloader = DataLoader(gan_test_dataset, batch_size=32)
 
-# %%
+# %% tags=[]
 from skimage.io import imsave
 
 
@@ -1381,10 +1383,10 @@ def apply_gan(dataloader, directory):
     return
 
 
-# %%
+# %% tags=[]
 apply_gan(dataloader, "test_images/")
 
-# %%
+# %% tags=[]
 # Clean-up the gpu's memory a bit to avoid Out-of-Memory errors
 cyclegan = cyclegan.cpu()
 torch.cuda.empty_cache()
@@ -1400,7 +1402,7 @@ torch.cuda.empty_cache()
 #
 
 
-# %%
+# %% tags=[]
 def make_dataset(directory):
     """Create a dataset from a directory of images with the classes in the same order as the VGG's output.
 
@@ -1447,13 +1449,13 @@ def test_gan(dataset):
 #     - counterfactual
 # </div>
 
-# %%
+# %% tags=[]
 # Dataset of real images
-ds_real = make_dataset(...)
+ds_real = ...
 # Dataset of reconstructed images (full cycle)
-ds_recon = make_dataset(...)
+ds_recon = ...
 # Datset of counterfactuals (half-cycle)
-ds_counterfactual = make_dataset(...)
+ds_counterfactual = ...
 
 
 # %% tags=["solution"]
@@ -1469,13 +1471,12 @@ ds_recon = make_dataset("test_images/reconstructed/")
 ds_counterfactual = make_dataset("test_images/counterfactual/")
 
 # %% [markdown]
-# <div class="alert alert-banner alert-info">
+# <div class="alert alert-banner alert-warning">
 # We get the following accuracies:
 #
 # 1. `accuracy_real`: Accuracy of the classifier on the real images, just for the two classes used in the GAN
 # 2. `accuracy_recon`: Accuracy of the classifier on the reconstruction.
 # 3. `accuracy_counter`: Accuracy of the classifier on the counterfactual images.
-#
 # <h4>Questions</h4>
 # - In a perfect world, what value would we expect for `accuracy_recon`? What do we compare it to and why is it higher/lower?
 # - How well is it translating from one class to another? The higher `accuracy_counter` the better, but...
@@ -1484,7 +1485,7 @@ ds_counterfactual = make_dataset("test_images/counterfactual/")
 # Let us know your insights on Element.
 # </div>
 
-# %%
+# %% tags=[]
 accuracy_real = test_gan(ds_real)
 accuracy_recon = test_gan(ds_recon)
 accuracy_counter = test_gan(ds_counterfactual)
@@ -1492,19 +1493,72 @@ print(
     f"Accuracy real: {accuracy_real}\nAccuracy reconstruction: {accuracy_recon}\nAccuracy counterfactuals: {accuracy_counter}\n"
 )
 
+
 # %% [markdown]
-# <div class="alert alert-block alert-info"><h4>TODO</h4>
-# - Modify the `evaluate_cm` method so that it also returns the probability of the target class (hint: you might need to `zip`, and you can use `item()` to get a value from a single-element tensor).
+# We're going to look at the confusion matrices for the counterfactuals, and compare it to that of the real images.
+
+# %% tags=[]
+@torch.no_grad()
+def evaluate_cm_gan(dataloader, name):
+    correct = 0
+    total = 0
+    ys = []
+    preds = []
+    prob_correct = []
+    for x, y in tqdm(dataloader, name):
+        
+        x, y = x.to(device), y.to(device)
+        
+        logits = model(x)
+        probs = torch.nn.Softmax(dim=1)(logits)
+        batch_predictions = torch.argmax(probs, dim=1)
+        
+        # append predictions and groundtruth to our big list,
+        # converting `tensor` objects to simple values through .item()
+        preds.extend([k.item() for k in batch_predictions])
+        ys.extend([k.item() for k in y])
+        
+        prob_correct.extend([prob[target.item()].item() for prob, target in zip(probs, y)])
+    return (preds, ys, prob_correct)
+
+
+# %% tags=[]
+def test_cm_gan(dataset):
+    '''Evaluate prediction accuracy on the test dataset.'''
+    # Run the evaluation
+    model.eval()
+    dataloader = DataLoader(dataset, batch_size=32)
+    
+    return evaluate_cm_gan(dataloader, 'test')
+
+
+# %% tags=[]
+gan_predictions, gan_targets, gan_probs = test_cm_gan(ds_counterfactual)
+predictions, targets, probs = test_cm_gan(ds_real)
+
+# %% tags=[]
+labels = [class_to_idx[i] for i in classes]
+print("The confusion matrix of the classifier on the counterfactuals")
+cm_analysis(gan_predictions, gan_targets, names=classes, labels=labels)
+
+# %% tags=[]
+print("The confusion matrix on the real images... for comparison")
+cm_analysis(predictions, targets, names=classes, labels=labels)
+
+# %% [markdown] tags=[]
+# <div class="alert alert-banner alert-warning">
+# <h4>Questions</h4>
+#     
+# - What would you expect the confusion matrix for the counterfactuals to look like? Why?
+# - Do the two directions of the CycleGAN work equally as well?
+# - Can you think of anything that might have made it more difficult, or easier, to translate in a one direction vs the other?
+#     
 # </div>
 
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h1>Checkpoint 4</h1>
 #  We have seen that our CycleGAN network has successfully translated some of the synapses from one class to the other, but there are clearly some things to look out for!
-#
-# Take the time to think about these questions before moving on:
-# - What would you expect the confusion matrix for the counterfactuals to look like? Why?
-# - Do the two directions of the CycleGAN work equally as well?
-# - Can you think of anything that might have made it more difficult, or easier, to translate in a one direction vs the other?
+# Take the time to think about the questions above before moving on...
 #
 # This is the end of Section 3. Let us know on Element if you have reached this point!
 # </div>
@@ -1539,7 +1593,7 @@ print(
 # - Sort the items by how good they are (hint: `argsort`)
 # </div>
 
-# %%
+# %% tags=[]
 ####### Exercise 5.1 TODO #######
 score = ...  # How good they were before + how good they became
 best_to_worst = ...  # Sort them by how good they are
@@ -1556,15 +1610,15 @@ best_to_worst = torch.argsort(torch.tensor(score), descending=True)
 # %% [markdown]
 # To check that we have got it right, let us get the accuracy on the best 100 vs the worst 100 samples:
 
-# %%
+# %% tags=[]
 best_100 = Subset(ds_counterfactual, best_to_worst[:100])
 best_100_real = Subset(ds_real, best_to_worst[:100])
 worst_100 = Subset(ds_counterfactual, best_to_worst[-100:])
 
-# %%
+# %% tags=[]
 test_gan(best_100)
 
-# %%
+# %% tags=[]
 test_gan(worst_100)
 
 # %% [markdown]
@@ -1576,11 +1630,11 @@ test_gan(worst_100)
 # To do this, we will take the sample image and mask out all of the pixels in the attribution. We will then replace these masked out pixels by the equivalent values in the counterfactual. So we'll have a hybrid image that is like the original everywhere except in the areas that matter for classification.
 # </div>
 
-# %%
+# %% tags=[]
 dataloader_real = DataLoader(best_100_real, batch_size=10)
 dataloader_counter = DataLoader(best_100, batch_size=10)
 
-# %%
+# %% tags=[]
 # %%time
 with torch.no_grad():
     model.to(device)
@@ -1604,7 +1658,7 @@ with torch.no_grad():
     # Normalize the attributions
     attributions = [a / np.max(np.abs(a)) for a in attributions]
 
-# %%
+# %% tags=[]
 # Functions for creating an interactive visualization of our attributions
 model.cpu()
 
@@ -1678,7 +1732,7 @@ def interactive_counterfactuals(idx, threshold=0.1):
 # If you want to see different samples, slide through the `idx`.
 # </div>
 
-# %%
+# %% tags=[]
 interact(interactive_counterfactuals, idx=(0, 99), threshold=(0.0, 1.0, 0.05))
 
 # %% [markdown]
