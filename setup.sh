@@ -5,6 +5,7 @@ conda env create -f environment.yaml
 # get the CycleGAN code and dependencies
 git clone https://github.com/funkey/neuromatch_xai
 mv neuromatch_xai/cycle_gan .
+rm -r neuromatch_xai
 
 # Download checkpoints and data
 wget 'https://www.dropbox.com/s/fbloj6iitlh2kpw/resources.zip?dl=1' -O resources.zip
