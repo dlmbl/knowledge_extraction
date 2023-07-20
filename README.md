@@ -14,17 +14,16 @@ This is a GPU-hungry exercise so you're going to need all the GPU memory you can
 Next, run the setup script. It might take a few minutes.
 ```
 cd 09_knowledge_extraction
-bash setup.sh
+./setup.sh
 ```
 This will:
-- Create a `conda` environment for this exercise
+- Create a `mamba` environment for this exercise
 - Download and unzip data and pre-trained network
 Feel free to have a look at the `setup.sh` script to see the details.
 
 
-Start you environment, and begin a Jupyter Lab instance:
+Next, begin a Jupyter Lab instance:
 ```
-conda activate 09_knowledge_extraction
 jupyter lab
 ```
 ...and continue with the instructions in the notebook.
