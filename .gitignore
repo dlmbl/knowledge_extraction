@@ -2,3 +2,4 @@ data/
 neuromatch_xai/
 cycle_gan/
 checkpoints/
+test_images/
