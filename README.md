@@ -2,7 +2,7 @@
 
 ## Setup
 
-Before anything else, in the super-repository called `DL-MBL-2022`:
+Before anything else, in the super-repository called `DL-MBL-2023`:
 ```
 git pull
 git submodule update --init 09_knowledge_extraction
@@ -14,7 +14,7 @@ This is a GPU-hungry exercise so you're going to need all the GPU memory you can
 Next, run the setup script. It might take a few minutes.
 ```
 cd 09_knowledge_extraction
-./setup.sh
+source setup.sh
 ```
 This will:
 - Create a `mamba` environment for this exercise
