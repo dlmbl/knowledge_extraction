@@ -1,13 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env -S bash -i
 echo "Creating conda environment"
-conda env create -f environment.yaml
+mamba env create -f environment.yaml
 
 # get the CycleGAN code and dependencies
 git clone https://github.com/funkey/neuromatch_xai
 mv neuromatch_xai/cycle_gan .
+rm -rf neuromatch_xai
 
 # Download checkpoints and data
-wget 'https://www.dropbox.com/s/fbloj6iitlh2kpw/resources.zip?dl=1' -O resources.zip
+wget 'https://dl-at-mbl-2023-data.s3.us-east-2.amazonaws.com/knowledge_extraction_resources.zip' -O resources.zip
 # Unzip the checkpoints and data
 unzip -o resources.zip data.zip
 unzip -o resources.zip checkpoints.zip
