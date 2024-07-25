@@ -1,11 +1,19 @@
 # Exercise 9: Explainable AI and Knowledge Extraction
 
+## Overview
+
+In this exercise we will:
+1. Use a gradient-based attribution method to try to find out what parts of an image contribute to its classification
+2. Train a CycleGAN to create counterfactual images
+3. Run a discriminative attribution from counterfactuals
+
+
 ## Setup
 
-Before anything else, in the super-repository called `DL-MBL-2023`:
+Before anything else, in the super-repository called `DL-MBL-2024`:
 ```
 git pull
-git submodule update --init 09_knowledge_extraction
+git submodule update --init 08_knowledge_extraction
 ```
 
 Then, if you have any other exercises still running, please save your progress and shut down those kernels.
@@ -13,7 +21,7 @@ This is a GPU-hungry exercise so you're going to need all the GPU memory you can
 
 Next, run the setup script. It might take a few minutes.
 ```
-cd 09_knowledge_extraction
+cd 08_knowledge_extraction
 source setup.sh
 ```
 This will:
@@ -28,10 +36,7 @@ jupyter lab
 ```
 ...and continue with the instructions in the notebook.
 
-## Overview
 
-In this exercise we will:
-1. Train a classifier to predict, from 2D EM images of synapses, which neurotransmitter is (mostly) used at that synapse
-2. Use a gradient-based attribution method to try to find out what parts of the images contribute to the prediction
-3. Train a CycleGAN to create counterfactual images
-4. Run a discriminative attribution from counterfactuals
+### Acknowledgments
+
+This notebook was written by Jan Funke and modified by Tri Nguyen and Diane Adjavon, using code from Nils Eckstein and a modified version of the [CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) implementation.
