@@ -5,7 +5,9 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
+from copy import deepcopy
+import json
+from pathlib import Path
 
 class Generator(nn.Module):
     def __init__(self, generator, style_mapping):
@@ -34,16 +36,34 @@ def set_requires_grad(module, value=True):
         param.requires_grad = value
 
 
+def exponential_moving_average(model, ema_model, beta=0.999):
+    """Update the EMA model's parameters with an exponential moving average"""
+    for param, ema_param in zip(model.parameters(), ema_model.parameters()):
+        ema_param.data.mul_(beta).add_((1 - beta) * param.data)
+
+
+def copy_parameters(source_model, target_model):
+    """Copy the parameters of a model to another model"""
+    for param, target_param in zip(
+        source_model.parameters(), target_model.parameters()
+    ):
+        target_param.data.copy_(param.data)
+
+
 if __name__ == "__main__":
+    save_dir = Path("checkpoints/stargan")
+    save_dir.mkdir(parents=True, exist_ok=True)
     mnist = ColoredMNIST("../data", download=True, train=True)
-    device = torch.devic("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     unet = UNet(depth=2, in_channels=6, out_channels=3, final_activation=nn.Sigmoid())
+    unet_ema = deepcopy(unet)
     discriminator = DenseModel(input_shape=(3, 28, 28), num_classes=4)
     style_mapping = DenseModel(input_shape=(3, 28, 28), num_classes=3)
     generator = Generator(unet, style_mapping=style_mapping)
 
     # all models on the GPU
     generator = generator.to(device)
+    unet_ema = unet_ema.to(device)
     discriminator = discriminator.to(device)
 
     cycle_loss_fn = nn.L1Loss()
@@ -57,7 +77,7 @@ if __name__ == "__main__":
     )  # We will use the same dataset as before
 
     losses = {"cycle": [], "adv": [], "disc": []}
-    for epoch in range(50):
+    for epoch in range(25):
         for x, y in tqdm(dataloader, desc=f"Epoch {epoch}"):
             x = x.to(device)
             y = y.to(device)
@@ -110,6 +130,23 @@ if __name__ == "__main__":
             losses["adv"].append(adv_loss.item())
             losses["disc"].append(disc_loss.item())
 
+            # EMA update
+            exponential_moving_average(unet, unet_ema)
             # TODO add logging, add checkpointing
-
-    # TODO store losses
+        # Copy the EMA model's parameters to the generator
+        copy_parameters(unet_ema, unet)
+        # Store checkpoint
+        torch.save(
+            {
+                "unet": unet.state_dict(),
+                "discriminator": discriminator.state_dict(),
+                "style_mapping": style_mapping.state_dict(),
+                "optimizer_g": optimizer_g.state_dict(),
+                "optimizer_d": optimizer_d.state_dict(),
+                "epoch": epoch,
+            },
+            save_dir / f"checkpoint_{epoch}.pth",
+        )
+        # Store losses
+        with open(save_dir / "losses.json", "w") as f:
+            json.dump(losses, f)
