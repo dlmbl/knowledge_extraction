@@ -9,6 +9,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
+
 class Generator(nn.Module):
     def __init__(self, generator, style_mapping):
         super().__init__()
@@ -55,15 +56,22 @@ if __name__ == "__main__":
     save_dir.mkdir(parents=True, exist_ok=True)
     mnist = ColoredMNIST("../data", download=True, train=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    unet = UNet(depth=2, in_channels=6, out_channels=3, final_activation=nn.Sigmoid())
-    unet_ema = deepcopy(unet)
+    size_style = 8
+    total_epochs = 14
+    unet = UNet(
+        depth=2,
+        in_channels=3 + size_style,
+        out_channels=3,
+        final_activation=nn.Sigmoid(),
+    )
     discriminator = DenseModel(input_shape=(3, 28, 28), num_classes=4)
-    style_mapping = DenseModel(input_shape=(3, 28, 28), num_classes=3)
+    style_mapping = DenseModel(input_shape=(3, 28, 28), num_classes=size_style)
     generator = Generator(unet, style_mapping=style_mapping)
+    generator_ema = Generator(deepcopy(unet), style_mapping=deepcopy(style_mapping))
 
     # all models on the GPU
     generator = generator.to(device)
-    unet_ema = unet_ema.to(device)
+    generator_ema = generator_ema.to(device)
     discriminator = discriminator.to(device)
 
     cycle_loss_fn = nn.L1Loss()
@@ -76,8 +84,23 @@ if __name__ == "__main__":
         mnist, batch_size=32, drop_last=True, shuffle=True
     )  # We will use the same dataset as before
 
+    # Load last existing checkpoint
+    epoch = 0
+    checkpoints = sorted(save_dir.glob("checkpoint_*.pth"))
+    if len(checkpoints) > 0:
+        checkpoint = torch.load(checkpoints[-1])
+        print(f"Resuming from checkpoint {checkpoints[-1]}")
+        unet.load_state_dict(checkpoint["unet"])
+        discriminator.load_state_dict(checkpoint["discriminator"])
+        style_mapping.load_state_dict(checkpoint["style_mapping"])
+        optimizer_g.load_state_dict(checkpoint["optimizer_g"])
+        optimizer_d.load_state_dict(checkpoint["optimizer_d"])
+        epoch = (
+            checkpoint["epoch"] + 1
+        )  # Start from the next epoch since this checkpoint exists
+
     losses = {"cycle": [], "adv": [], "disc": []}
-    for epoch in range(25):
+    for epoch in range(epoch, total_epochs):
         for x, y in tqdm(dataloader, desc=f"Epoch {epoch}"):
             x = x.to(device)
             y = y.to(device)
@@ -131,10 +154,10 @@ if __name__ == "__main__":
             losses["disc"].append(disc_loss.item())
 
             # EMA update
-            exponential_moving_average(unet, unet_ema)
+            exponential_moving_average(generator, generator_ema)
             # TODO add logging, add checkpointing
         # Copy the EMA model's parameters to the generator
-        copy_parameters(unet_ema, unet)
+        copy_parameters(generator_ema, generator)
         # Store checkpoint
         torch.save(
             {
