@@ -353,15 +353,15 @@ for attr, im in zip(attributions_blurred.cpu().numpy(), x.cpu().numpy()):
 # In this example, we will train a StarGAN network that is able to take any of our special MNIST images and change its class.
 # %% [markdown] tags=[]
 # ### The model
-# ![cycle.png](assets/cyclegan.png)
+# ![stargan.png](assets/stargan.png)
 #
 # In the following, we create a [StarGAN model](https://arxiv.org/abs/1711.09020).
 # It is a Generative Adversarial model that is trained to turn one class of images X into a different class of images Y.
 #
-# The model is made up of three networks:
+# We will not be using the random latent code (green, in the figure), so the model we use is made up of three networks:
 # - The generator - this will be the bulk of the model, and will be responsible for transforming the images: we're going to use a `UNet`
 # - The discriminator - this will be responsible for telling the difference between real and fake images: we're going to use a `DenseModel`
-# - The style mapping - this will be responsible for encoding the style of the image: we're going to use a `DenseModel`
+# - The style encoder - this will be responsible for encoding the style of the image: we're going to use a `DenseModel`
 #
 # Let's start by creating these!
 # %%
@@ -370,10 +370,11 @@ from torch import nn
 
 
 class Generator(nn.Module):
-    def __init__(self, generator, style_mapping):
+
+    def __init__(self, generator, style_encoder):
         super().__init__()
         self.generator = generator
-        self.style_mapping = style_mapping
+        self.style_encoder = style_encoder
 
     def forward(self, x, y):
         """
@@ -382,12 +383,13 @@ class Generator(nn.Module):
         y: torch.Tensor
             The style image
         """
-        style = self.style_mapping(y)
+        style = self.style_encoder(y)
         # Concatenate the style vector with the input image
         style = style.unsqueeze(-1).unsqueeze(-1)
         style = style.expand(-1, -1, x.size(2), x.size(3))
         x = torch.cat([x, style], dim=1)
         return self.generator(x)
+
 
 # %% [markdown]
 # <div class="alert alert-block alert-info"><h3>Task 3.1: Create the models</h3>
@@ -396,6 +398,8 @@ class Generator(nn.Module):
 #
 # Given the Generator structure above, fill in the missing parts for the unet and the style mapping.
 # %%
+style_size = ...  # TODO choose a size for the style space
+unet_depth = ...  # TODO Choose a depth for the UNet
 style_mapping = DenseModel(
     input_shape=..., num_classes=...  # How big is the style space?
 )
@@ -403,10 +407,19 @@ unet = UNet(depth=..., in_channels=..., out_channels=..., final_activation=nn.Si
 
 generator = Generator(unet, style_mapping=style_mapping)
 # %% tags=["solution"]
-# Here is an example of a working exercise
-style_mapping = DenseModel(input_shape=(3, 28, 28), num_classes=3)
+# Here is an example of a working setup! Note that you can change the hyperparameters as you experiment.
+# Choose your own setup to see what works for you.
+style_encoder = DenseModel(input_shape=(3, 28, 28), num_classes=3)
 unet = UNet(depth=2, in_channels=6, out_channels=3, final_activation=nn.Sigmoid())
-generator = Generator(unet, style_mapping=style_mapping)
+generator = Generator(unet, style_encoder=style_encoder)
+
+# %% [markdown] tags=[]
+# <div class="alert alert-block alert-warning"><h3>Hyper-parameter choices</h3>
+# <ul>
+# <li>Are any of the hyperparameters you choose above constrained in some way?</li>
+# <li>What would happen if you chose a depth of 10 for the UNet?</li>
+# <li>Is there a minimum size for the style space? Why or why not?</li>
+# </ul>
 
 # %% [markdown] tags=[]
 # <div class="alert alert-block alert-info"><h3>Task 3.2: Create the discriminator</h3>
@@ -428,12 +441,37 @@ discriminator = discriminator.to(device)
 # %% [markdown] tags=[]
 # ## Training a GAN
 #
-# Yes, really!
+# Training an adversarial network is a bit more complicated than training a classifier.
+# For starters, we are simultaneously training two different networks that work against each other.
+# As such, we need to be careful about how and when we update the weights of each network.
 #
-# TODO about the losses:
-# - An adversarial loss
-# - A cycle loss
-# TODO add exercise!
+# We will have two different optimizers, one for the Generator and one for the Discriminator.
+#
+# %%
+optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=1e-4)
+optimizer_g = torch.optim.Adam(generator.parameters(), lr=1e-4)
+# %% [markdown] tags=[]
+#
+# There are also two different types of losses that we will need.
+# **Adversarial loss**
+# This loss describes how well the discriminator can tell the difference between real and generated images.
+# In our case, this will be a sort of classification loss - we will use Cross Entropy.
+# <div class="alert alert-block alert-warning">
+# The adversarial loss will be applied differently to the generator and the discriminator! Be very careful!
+# </div>
+# %%
+adverial_loss_fn = nn.CrossEntropyLoss()
+
+# %% [markdown] tags=[]
+#
+# **Cycle/reconstruction loss**
+# The cycle loss is there to make sure that the generator doesn't output an image that looks nothing like the input!
+# Indeed, by training the generator to be able to cycle back to the original image, we are making sure that it makes a minimum number of changes.
+# The cycle loss is applied only to the generator.
+#
+cycle_loss_fn = nn.L1Loss()
+
+# %%
 
 # %% [markdown] tags=[]
 # <div class="alert alert-banner alert-info"><h4>Task 3.2: Training!</h4>
@@ -448,78 +486,79 @@ discriminator = discriminator.to(device)
 #
 # <img src="assets/model_train.jpg" alt="drawing" width="500px"/>
 #
-# TODO also turn this into a standalong script for use during the project phase
-# from torch.utils.data import DataLoader
-# from tqdm import tqdm
-#
-#
-# def set_requires_grad(module, value=True):
-#     """Sets `requires_grad` on a `module`'s parameters to `value`"""
-#     for param in module.parameters():
-#         param.requires_grad = value
-#
-#
-# cycle_loss_fn = nn.L1Loss()
-# class_loss_fn = nn.CrossEntropyLoss()
-#
-# optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=1e-6)
-# optimizer_g = torch.optim.Adam(generator.parameters(), lr=1e-4)
-#
-# dataloader = DataLoader(
-#     mnist, batch_size=32, drop_last=True, shuffle=True
-# )  # We will use the same dataset as before
-#
-# losses = {"cycle": [], "adv": [], "disc": []}
-# for epoch in range(50):
-#     for x, y in tqdm(dataloader, desc=f"Epoch {epoch}"):
-#         x = x.to(device)
-#         y = y.to(device)
-#         # get the target y by shuffling the classes
-#         # get the style sources by random sampling
-#         random_index = torch.randperm(len(y))
-#         x_style = x[random_index].clone()
-#         y_target = y[random_index].clone()
-#
-#         set_requires_grad(generator, True)
-#         set_requires_grad(discriminator, False)
-#         optimizer_g.zero_grad()
-#         # Get the fake image
-#         x_fake = generator(x, x_style)
-#         # Try to cycle back
-#         x_cycled = generator(x_fake, x)
-#         # Discriminate
-#         discriminator_x_fake = discriminator(x_fake)
-#         # Losses to  train the generator
-#
-#         # 1. make sure the image can be reconstructed
-#         cycle_loss = cycle_loss_fn(x, x_cycled)
-#         # 2. make sure the discriminator is fooled
-#         adv_loss = class_loss_fn(discriminator_x_fake, y_target)
-#
-#         # Optimize the generator
-#         (cycle_loss + adv_loss).backward()
-#         optimizer_g.step()
-#
-#         set_requires_grad(generator, False)
-#         set_requires_grad(discriminator, True)
-#         optimizer_d.zero_grad()
-#         # TODO Do I need to re-do the forward pass?
-#         discriminator_x = discriminator(x)
-#         discriminator_x_fake = discriminator(x_fake.detach())
-#         # Losses to train the discriminator
-#         # 1. make sure the discriminator can tell real is real
-#         real_loss = class_loss_fn(discriminator_x, y)
-#         # 2. make sure the discriminator can't tell fake is fake
-#         fake_loss = -class_loss_fn(discriminator_x_fake, y_target)
-#         #
-#         disc_loss = (real_loss + fake_loss) * 0.5
-#         disc_loss.backward()
-#         # Optimize the discriminator
-#         optimizer_d.step()
-#
-#         losses["cycle"].append(cycle_loss.item())
-#         losses["adv"].append(adv_loss.item())
-#         losses["disc"].append(disc_loss.item())
+# %%
+# TODO also turn this into a standalone script for use during the project phase
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+
+def set_requires_grad(module, value=True):
+    """Sets `requires_grad` on a `module`'s parameters to `value`"""
+    for param in module.parameters():
+        param.requires_grad = value
+
+
+cycle_loss_fn = nn.L1Loss()
+class_loss_fn = nn.CrossEntropyLoss()
+
+optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=1e-6)
+optimizer_g = torch.optim.Adam(generator.parameters(), lr=1e-4)
+
+dataloader = DataLoader(
+    mnist, batch_size=32, drop_last=True, shuffle=True
+)  # We will use the same dataset as before
+
+losses = {"cycle": [], "adv": [], "disc": []}
+for epoch in range(50):
+    for x, y in tqdm(dataloader, desc=f"Epoch {epoch}"):
+        x = x.to(device)
+        y = y.to(device)
+        # get the target y by shuffling the classes
+        # get the style sources by random sampling
+        random_index = torch.randperm(len(y))
+        x_style = x[random_index].clone()
+        y_target = y[random_index].clone()
+
+        set_requires_grad(generator, True)
+        set_requires_grad(discriminator, False)
+        optimizer_g.zero_grad()
+        # Get the fake image
+        x_fake = generator(x, x_style)
+        # Try to cycle back
+        x_cycled = generator(x_fake, x)
+        # Discriminate
+        discriminator_x_fake = discriminator(x_fake)
+        # Losses to  train the generator
+
+        # 1. make sure the image can be reconstructed
+        cycle_loss = cycle_loss_fn(x, x_cycled)
+        # 2. make sure the discriminator is fooled
+        adv_loss = class_loss_fn(discriminator_x_fake, y_target)
+
+        # Optimize the generator
+        (cycle_loss + adv_loss).backward()
+        optimizer_g.step()
+
+        set_requires_grad(generator, False)
+        set_requires_grad(discriminator, True)
+        optimizer_d.zero_grad()
+        # TODO Do I need to re-do the forward pass?
+        discriminator_x = discriminator(x)
+        discriminator_x_fake = discriminator(x_fake.detach())
+        # Losses to train the discriminator
+        # 1. make sure the discriminator can tell real is real
+        real_loss = class_loss_fn(discriminator_x, y)
+        # 2. make sure the discriminator can't tell fake is fake
+        fake_loss = -class_loss_fn(discriminator_x_fake, y_target)
+        #
+        disc_loss = (real_loss + fake_loss) * 0.5
+        disc_loss.backward()
+        # Optimize the discriminator
+        optimizer_d.step()
+
+        losses["cycle"].append(cycle_loss.item())
+        losses["adv"].append(adv_loss.item())
+        losses["disc"].append(disc_loss.item())
 
 # %%
 plt.plot(losses["cycle"], label="Cycle loss")
