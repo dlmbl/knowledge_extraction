@@ -397,7 +397,7 @@ class Generator(nn.Module):
 # We are going to create the models for the generator, discriminator, and style mapping.
 #
 # Given the Generator structure above, fill in the missing parts for the unet and the style mapping.
-# %%
+# %% tags=["task"]
 style_size = ...  # TODO choose a size for the style space
 unet_depth = ...  # TODO Choose a depth for the UNet
 style_mapping = DenseModel(
@@ -428,7 +428,7 @@ generator = Generator(unet, style_encoder=style_encoder)
 # The discriminator will take as input either a real image or a fake image.
 # Fill in the following code to create a discriminator that can classify the images into the correct number of classes.
 # </div>
-# %% tags=[]
+# %% tags=["task"]
 discriminator = DenseModel(input_shape=..., num_classes=...)
 # %% tags=["solution"]
 discriminator = DenseModel(input_shape=(3, 28, 28), num_classes=4)
@@ -460,7 +460,7 @@ optimizer_g = torch.optim.Adam(generator.parameters(), lr=1e-4)
 # The adversarial loss will be applied differently to the generator and the discriminator! Be very careful!
 # </div>
 # %%
-adverial_loss_fn = nn.CrossEntropyLoss()
+adversarial_loss_fn = nn.CrossEntropyLoss()
 
 # %% [markdown] tags=[]
 #
@@ -469,47 +469,135 @@ adverial_loss_fn = nn.CrossEntropyLoss()
 # Indeed, by training the generator to be able to cycle back to the original image, we are making sure that it makes a minimum number of changes.
 # The cycle loss is applied only to the generator.
 #
+# %%
 cycle_loss_fn = nn.L1Loss()
 
-# %%
-
 # %% [markdown] tags=[]
-# <div class="alert alert-banner alert-info"><h4>Task 3.2: Training!</h4>
-# Let's train the CycleGAN one batch a time, plotting the output every so often to see how it is getting on.
-#
-# While you watch the model train, consider whether you think it will be successful at generating counterfactuals in the number of steps we give it. What is the minimum number of iterations you think are needed for this to work, and how much time do yo uthink it will take?
-# </div>
+# Stuff about the dataloader
 
-
-# %% [markdown] tags=[]
-# ...this time again.
-#
-# <img src="assets/model_train.jpg" alt="drawing" width="500px"/>
-#
 # %%
-# TODO also turn this into a standalone script for use during the project phase
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+
+dataloader = DataLoader(
+    mnist, batch_size=32, drop_last=True, shuffle=True
+)  # We will use the same dataset as before
+
+# %% [markdown] tags=[]
+# TODO - Describe set_requires_grad
 
 
+# %%
 def set_requires_grad(module, value=True):
     """Sets `requires_grad` on a `module`'s parameters to `value`"""
     for param in module.parameters():
         param.requires_grad = value
 
 
-cycle_loss_fn = nn.L1Loss()
-class_loss_fn = nn.CrossEntropyLoss()
+# %% [markdown] tags=[]
+# <div class="alert alert-banner alert-info"><h4>Task 3.2: Training!</h4>
+#
+# TODO - the task is to choose where to apply set_requires_grad
+# <ul>
+#   <li>Choose the values for `set_requires_grad`. Hint: which part of the code is training the generator? Which part is training the discriminator</li>
+#   <li>Choose the values of `set_requires_grad`, again. Hint: you may want to switch</li>
+#   <li>Choose the sign of the discriminator loss. Hint: what does the discriminator want to do?</li>
+# </ul>
+# Let's train the StarGAN one batch a time.
+# While you watch the model train, consider whether you think it will be successful at generating counterfactuals in the number of steps we give it. What is the minimum number of iterations you think are needed for this to work, and how much time do yo uthink it will take?
+# </div>
+# %% tags=["task"]
+from tqdm import tqdm  # This is a nice library for showing progress bars
 
-optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=1e-6)
-optimizer_g = torch.optim.Adam(generator.parameters(), lr=1e-4)
-
-dataloader = DataLoader(
-    mnist, batch_size=32, drop_last=True, shuffle=True
-)  # We will use the same dataset as before
 
 losses = {"cycle": [], "adv": [], "disc": []}
-for epoch in range(50):
+
+for epoch in range(15):
+    for x, y in tqdm(dataloader, desc=f"Epoch {epoch}"):
+        x = x.to(device)
+        y = y.to(device)
+        # get the target y by shuffling the classes
+        # get the style sources by random sampling
+        random_index = torch.randperm(len(y))
+        x_style = x[random_index].clone()
+        y_target = y[random_index].clone()
+
+        # TODO - Choose an option by commenting out what you don't want
+        ############
+        # Option 1 #
+        ############
+        set_requires_grad(generator, True)
+        set_requires_grad(discriminator, False)
+        ############
+        # Option 2 #
+        ############
+        set_requires_grad(generator, False)
+        set_requires_grad(discriminator, True)
+
+        optimizer_g.zero_grad()
+        # Get the fake image
+        x_fake = generator(x, x_style)
+        # Try to cycle back
+        x_cycled = generator(x_fake, x)
+        # Discriminate
+        discriminator_x_fake = discriminator(x_fake)
+        # Losses to  train the generator
+
+        # 1. make sure the image can be reconstructed
+        cycle_loss = cycle_loss_fn(x, x_cycled)
+        # 2. make sure the discriminator is fooled
+        adv_loss = adversarial_loss_fn(discriminator_x_fake, y_target)
+
+        # Optimize the generator
+        (cycle_loss + adv_loss).backward()
+        optimizer_g.step()
+
+        # TODO - Choose an option by commenting out what you don't want
+        ############
+        # Option 1 #
+        ############
+        set_requires_grad(generator, True)
+        set_requires_grad(discriminator, False)
+        ############
+        # Option 2 #
+        ############
+        set_requires_grad(generator, False)
+        set_requires_grad(discriminator, True)
+        #
+        optimizer_d.zero_grad()
+        #
+        discriminator_x = discriminator(x)
+        discriminator_x_fake = discriminator(x_fake.detach())
+
+        # TODO - Choose an option by commenting out what you don't want
+        # Losses to train the discriminator
+        # 1. make sure the discriminator can tell real is real
+        # 2. make sure the discriminator can tell fake is fake
+        ############
+        # Option 1 #
+        ############
+        real_loss = adversarial_loss_fn(discriminator_x, y)
+        fake_loss = -adversarial_loss_fn(discriminator_x_fake, y_target)
+        ############
+        # Option 2 #
+        ############
+        real_loss = adversarial_loss_fn(discriminator_x, y)
+        fake_loss = adversarial_loss_fn(discriminator_x_fake, y_target)
+        #
+        disc_loss = (real_loss + fake_loss) * 0.5
+        disc_loss.backward()
+        # Optimize the discriminator
+        optimizer_d.step()
+
+        losses["cycle"].append(cycle_loss.item())
+        losses["adv"].append(adv_loss.item())
+        losses["disc"].append(disc_loss.item())
+
+# %% tags=["solution"]
+from tqdm import tqdm  # This is a nice library for showing progress bars
+
+
+losses = {"cycle": [], "adv": [], "disc": []}
+for epoch in range(15):
     for x, y in tqdm(dataloader, desc=f"Epoch {epoch}"):
         x = x.to(device)
         y = y.to(device)
@@ -533,7 +621,7 @@ for epoch in range(50):
         # 1. make sure the image can be reconstructed
         cycle_loss = cycle_loss_fn(x, x_cycled)
         # 2. make sure the discriminator is fooled
-        adv_loss = class_loss_fn(discriminator_x_fake, y_target)
+        adv_loss = adversarial_loss_fn(discriminator_x_fake, y_target)
 
         # Optimize the generator
         (cycle_loss + adv_loss).backward()
@@ -547,9 +635,9 @@ for epoch in range(50):
         discriminator_x_fake = discriminator(x_fake.detach())
         # Losses to train the discriminator
         # 1. make sure the discriminator can tell real is real
-        real_loss = class_loss_fn(discriminator_x, y)
-        # 2. make sure the discriminator can't tell fake is fake
-        fake_loss = -class_loss_fn(discriminator_x_fake, y_target)
+        real_loss = adversarial_loss_fn(discriminator_x, y)
+        # 2. make sure the discriminator can tell fake is fake
+        fake_loss = -adversarial_loss_fn(discriminator_x_fake, y_target)
         #
         disc_loss = (real_loss + fake_loss) * 0.5
         disc_loss.backward()
@@ -560,15 +648,20 @@ for epoch in range(50):
         losses["adv"].append(adv_loss.item())
         losses["disc"].append(disc_loss.item())
 
+
+# %% [markdown] tags=[]
+# ...this time again. &#x1F682; &#x1F68B; &#x1F68B; &#x1F68B;
+#
+# Once training is complete, we can plot the losses to see how well the model is doing.
 # %%
 plt.plot(losses["cycle"], label="Cycle loss")
 plt.plot(losses["adv"], label="Adversarial loss")
 plt.plot(losses["disc"], label="Discriminator loss")
 plt.legend()
 plt.show()
-# %% [markdown] tags=[]
-# Let's add a quick plotting function before we begin training...
 
+# %% [markdown] tags=[]
+# We can also look at some examples of the images that the generator is creating.
 # %%
 idx = 0
 fig, axs = plt.subplots(1, 4, figsize=(12, 4))
@@ -581,8 +674,8 @@ for ax in axs:
     ax.axis("off")
 plt.show()
 
-# TODO WIP here
-
+# %%
+# TODO wip here
 # %% [markdown] tags=[]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 3</h2>
 # You've now learned the basics of what makes up a CycleGAN, and details on how to perform adversarial training.
