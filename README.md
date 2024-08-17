@@ -1,4 +1,4 @@
-# Exercise 9: Explainable AI and Knowledge Extraction
+# Exercise 8: Explainable AI and Knowledge Extraction
 
 ## Overview
 The goal of this exercise is to learn how to probe what a pre-trained classifier has learned about the data it was trained on. 
