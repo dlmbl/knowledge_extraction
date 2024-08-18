@@ -109,24 +109,28 @@ for x, y in dataloader:
 
 cm = confusion_matrix(labels, predictions, normalize="true")
 sns.heatmap(cm, annot=True, fmt=".2f")
-
+plt.ylabel("True")
+plt.xlabel("Predicted")
+plt.show()
 
 # %% [markdown]
 # # Part 2: Using Integrated Gradients to find what the classifier knows
 #
-# In this section we will make a first attempt at highlight differences between the "real" and "fake" images that are most important to change the decision of the classifier.
+# In this section we will make a first attempt at highlighting differences between the "real" and "fake" images that are most important to change the decision of the classifier.
 #
 
 # %% [markdown]
 # ## Attributions through integrated gradients
 #
-# Attribution is the process of finding out, based on the output of a neural network, which pixels in the input are (most) responsible. Another way of thinking about it is: which pixels would need to change in order for the network's output to change.
+# Attribution is the process of finding out, based on the output of a neural network, which pixels in the input are (most) responsible for the output. Another way of thinking about it is: which pixels would need to change in order for the network's output to change.
 #
 # Here we will look at an example of an attribution method called [Integrated Gradients](https://captum.ai/docs/extension/integrated_gradients). If you have a bit of time, have a look at this [super fun exploration of attribution methods](https://distill.pub/2020/attribution-baselines/), especially the explanations on Integrated Gradients.
 
 # %% tags=[]
 batch_size = 4
-batch = [mnist[i] for i in range(batch_size)]
+batch = []
+for i in range(4):
+    batch.append(next(image for image in mnist if image[1] == i))
 x = torch.stack([b[0] for b in batch])
 y = torch.tensor([b[1] for b in batch])
 x = x.to(device)
@@ -193,7 +197,8 @@ def visualize_attribution(attribution, original_image):
 
 
 # %% tags=[]
-for attr, im in zip(attributions, x.cpu().numpy()):
+for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+    print(f"Class {lbl}")
     visualize_attribution(attr, im)
 
 # %% [markdown]
@@ -223,7 +228,8 @@ def visualize_color_attribution(attribution, original_image):
     plt.show()
 
 
-for attr, im in zip(attributions, x.cpu().numpy()):
+for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+    print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
 # %% [markdown]
@@ -234,7 +240,7 @@ for attr, im in zip(attributions, x.cpu().numpy()):
 # If we didn't know in advance, it is unclear whether the color or the number is the most important feature for the classifier.
 # %% [markdown]
 #
-# ### Changing the basline
+# ### Changing the baseline
 #
 # Many existing attribution algorithms are comparative: they show which pixels of the input are responsible for a network output *compared to a baseline*.
 # The baseline is often set to an all 0 tensor, but the choice of the baseline affects the output.
@@ -248,7 +254,7 @@ for attr, im in zip(attributions, x.cpu().numpy()):
 # ```
 # To get more details about how to include the baseline.
 #
-# Try using the code above to change the baseline and see how this affects the output.
+# Try using the code below to change the baseline and see how this affects the output.
 #
 # 1. Random noise as a baseline
 # 2. A blurred/noisy version of the original image as a baseline.
@@ -266,7 +272,8 @@ random_baselines = ...  # TODO Change
 attributions_random = integrated_gradients.attribute(...)  # TODO Change
 
 # Plotting
-for attr, im in zip(attributions_random.cpu().numpy(), x.cpu().numpy()):
+for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+    print(f"Class {lbl}")
     visualize_attribution(attr, im)
 
 # %% tags=["solution"]
@@ -281,7 +288,8 @@ attributions_random = integrated_gradients.attribute(
 )
 
 # Plotting
-for attr, im in zip(attributions_random.cpu().numpy(), x.cpu().numpy()):
+for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+    print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
 # %% [markdown] tags=[]
@@ -299,7 +307,8 @@ blurred_baselines = ...  # TODO Create blurred version of the images
 attributions_blurred = integrated_gradients.attribute(...)  # TODO Fill
 
 # Plotting
-for attr, im in zip(attributions_blurred.cpu().numpy(), x.cpu().numpy()):
+for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+    print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
 # %% tags=["solution"]
@@ -316,7 +325,8 @@ attributions_blurred = integrated_gradients.attribute(
 )
 
 # Plotting
-for attr, im in zip(attributions_blurred.cpu().numpy(), x.cpu().numpy()):
+for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+    print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
 # %% [markdown] tags=[]
@@ -355,7 +365,7 @@ for attr, im in zip(attributions_blurred.cpu().numpy(), x.cpu().numpy()):
 # %% [markdown]
 # # Part 3: Train a GAN to Translate Images
 #
-# To gain insight into how the trained network classify images, we will use [Discriminative Attribution from Counterfactuals](https://arxiv.org/abs/2109.13412), a feature attribution with counterfactual explanations methodology.
+# To gain insight into how the trained network classifies images, we will use [Discriminative Attribution from Counterfactuals](https://arxiv.org/abs/2109.13412), a feature attribution with counterfactual explanations methodology.
 # This method employs a StarGAN to translate images from one class to another to make counterfactual explanations.
 #
 # **What is a counterfactual?**
@@ -502,6 +512,7 @@ dataloader = DataLoader(
     mnist, batch_size=32, drop_last=True, shuffle=True
 )  # We will use the same dataset as before
 
+
 # %% [markdown] tags=[]
 # As we stated earlier, it is important to make sure when each network is being trained when working with a GAN.
 # Indeed, if we update the weights at the same time, we may lose the adversarial aspect of the training altogether, with information leaking into the generator or discriminator causing them to collaborate when they should be competing!
@@ -511,6 +522,7 @@ def set_requires_grad(module, value=True):
     """Sets `requires_grad` on a `module`'s parameters to `value`"""
     for param in module.parameters():
         param.requires_grad = value
+
 
 # %% [markdown] tags=[]
 # Another consequence of adversarial training is that it is very unstable.
@@ -741,9 +753,13 @@ plt.show()
 idx = 0
 fig, axs = plt.subplots(1, 4, figsize=(12, 4))
 axs[0].imshow(x[idx].cpu().permute(1, 2, 0).detach().numpy())
+axs[0].set_title("Input image")
 axs[1].imshow(x_style[idx].cpu().permute(1, 2, 0).detach().numpy())
+axs[1].set_title("Style image")
 axs[2].imshow(x_fake[idx].cpu().permute(1, 2, 0).detach().numpy())
+axs[2].set_title("Generated image")
 axs[3].imshow(x_cycled[idx].cpu().permute(1, 2, 0).detach().numpy())
+axs[3].set_title("Cycled image")
 
 for ax in axs:
     ax.axis("off")
@@ -859,6 +875,9 @@ for i, (x, y) in tqdm(enumerate(random_test_mnist), total=num_images):
 # %%
 cf_cm = confusion_matrix(target_labels, predictions, normalize="true")
 sns.heatmap(cf_cm, annot=True, fmt=".2f")
+plt.ylabel("True")
+plt.xlabel("Predicted")
+plt.show()
 
 # %% [markdown] tags=[]
 # <div class="alert alert-block alert-warning"><h3>Questions</h3>
@@ -907,6 +926,7 @@ x_fake = x_fake.to(device).float()
 # Generated attributions on integrated gradients
 attributions = integrated_gradients.attribute(x, baselines=x_fake, target=y)
 
+
 # %% Another visualization function
 def visualize_color_attribution_and_counterfactual(
     attribution, original_image, counterfactual_image
@@ -926,6 +946,7 @@ def visualize_color_attribution_and_counterfactual(
     ax2.set_title("Attribution")
     ax2.axis("off")
     plt.show()
+
 
 # %%
 for idx in range(batch_size):
@@ -965,8 +986,8 @@ for idx in range(batch_size):
 #
 # So color is important... but not always? What's going on!?
 # There is a final piece of information that we can use to solve the puzzle: the style space.
-# %%
-# <div class="alert alert-block alert-info"><h3>Task 6.1: Explore the style space</h3>
+# %% [markdown]
+# <div class="alert alert-block alert-info"><h3>Task 5.1: Explore the style space</h3>
 # Let's take a look at the style space.
 # We will use the style encoder to encode the style of the images and then use PCA to visualize it.
 # </div>
@@ -988,14 +1009,16 @@ pca = PCA(n_components=2)
 styles_pca = pca.fit_transform(styles)
 
 # Plot the PCA
+markers = ["o", "s", "P", "^"]
 plt.figure(figsize=(10, 10))
 for i in range(4):
     plt.scatter(
         styles_pca[np.array(labels) == i, 0],
         styles_pca[np.array(labels) == i, 1],
+        marker=markers[i],
         label=f"Class {i}",
     )
-
+plt.legend()
 plt.show()
 
 # %% [markdown]
@@ -1013,11 +1036,15 @@ normalized_styles = (styles - np.min(styles, axis=1, keepdims=True)) / np.ptp(
 
 # Plot the PCA again!
 plt.figure(figsize=(10, 10))
-plt.scatter(
-    styles_pca[:, 0],
-    styles_pca[:, 1],
-    c=normalized_styles,
-)
+for i in range(4):
+    plt.scatter(
+        styles_pca[np.array(labels) == i, 0],
+        styles_pca[np.array(labels) == i, 1],
+        c=normalized_styles[np.array(labels) == i],
+        marker=markers[i],
+        label=f"Class {i}",
+    )
+plt.legend()
 plt.show()
 # %% [markdown]
 # <div class="alert alert-block alert-warning"><h3>Questions</h3>
@@ -1033,16 +1060,20 @@ plt.show()
 # Let's get that color, then plot the style space again.
 # (Note: once again, no coding needed here, just run the cell and think about the results with the questions below)
 # </div>
-# %% tags=["solution"]
-colors = [np.max(x.numpy(), axis=(1, 2)) for x, _ in random_test_mnist]
+# %%
+colors = np.array([np.max(x.numpy(), axis=(1, 2)) for x, _ in random_test_mnist])
 
 # Plot the PCA again!
 plt.figure(figsize=(10, 10))
-plt.scatter(
-    styles_pca[:, 0],
-    styles_pca[:, 1],
-    c=colors,
-)
+for i in range(4):
+    plt.scatter(
+        styles_pca[np.array(labels) == i, 0],
+        styles_pca[np.array(labels) == i, 1],
+        c=colors[np.array(labels) == i],
+        marker=markers[i],
+        label=f"Class {i}",
+    )
+plt.legend()
 plt.show()
 
 # %%
