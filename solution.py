@@ -733,10 +733,13 @@ for epoch in range(15):
 # %% [markdown] tags=[]
 # Once training is complete, we can plot the losses to see how well the model is doing.
 # %%
-plt.plot(losses["cycle"], label="Cycle loss")
-plt.plot(losses["adv"], label="Adversarial loss")
-plt.plot(losses["disc"], label="Discriminator loss")
-plt.legend()
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(15, 5))
+ax1.plot(losses["cycle"])
+ax1.set_title("Cycle loss")
+ax2.plot(losses["adv"])
+ax2.set_title("Adversarial loss")
+ax3.plot(losses["disc"])
+ax3.set_title("Discriminator loss")
 plt.show()
 
 # %% [markdown] tags=[]
