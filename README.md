@@ -4,7 +4,7 @@
 The goal of this exercise is to learn how to probe what a pre-trained classifier has learned about the data it was trained on. 
 
 We will be working with a simple example which is a fun derivation on the MNIST dataset that you will have seen in previous exercises in this course. 
-Unlike regular MNIST, our dataset is classified not by number, but by color!
+Unlike regular MNIST, our dataset is classified not by number, but by color! The question is... which colors fall within which class?
 
 ![CMNIST](assets/cmnist.png)
 
@@ -17,9 +17,6 @@ We will evaluate this GAN using our classifier; Is it really able to change an i
 
 Finally, we will combine the two methods — attribution and counterfactual — to get a full explanation of what exactly it is that the classifier is doing. We will likely learn whether it can teach us anything, and whether we should trust it!
 
-If time permits, we will try to apply this all over again as a bonus exercise to a much more complex and more biologically relevant problem.
-
-![synister](assets/synister.png)
 ## Setup
 
 Before anything else, in the super-repository called `DL-MBL-2024`:
@@ -34,21 +31,16 @@ This is a GPU-hungry exercise so you're going to need all the GPU memory you can
 Next, run the setup script. It might take a few minutes.
 ```
 cd 08_knowledge_extraction
-source setup.sh
+sh setup.sh
 ```
 This will:
-- Create a `mamba` environment for this exercise
-- Download and unzip data and pre-trained network
+- Create a `conda` environment for this exercise
+- Download the data and train the classifier we're learning about
 Feel free to have a look at the `setup.sh` script to see the details.
 
 
-Next, begin a Jupyter Lab instance:
-```
-jupyter lab
-```
-...and continue with the instructions in the notebook.
-
+Next, open the exercise notebook!
 
 ### Acknowledgments
 
-This notebook was written by Jan Funke and modified by Tri Nguyen and Diane Adjavon, using code from Nils Eckstein and a modified version of the [CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) implementation.
+This notebook was written by Diane Adjavon, from a previous version written by Jan Funke and modified by Tri Nguyen, using code from Nils Eckstein.
