@@ -32,7 +32,7 @@
 # loading the data
 from classifier.data import ColoredMNIST
 
-mnist = ColoredMNIST("data", download=True)
+mnist = ColoredMNIST("extras/data", download=True)
 # %% [markdown]
 # Some information about the dataset:
 # - The dataset is a colored version of the MNIST dataset.
@@ -97,7 +97,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
-test_mnist = ColoredMNIST("data", download=True, train=False)
+test_mnist = ColoredMNIST("extras/data", download=True, train=False)
 dataloader = DataLoader(test_mnist, batch_size=32, shuffle=False)
 
 labels = []
@@ -788,7 +788,7 @@ plt.show()
 # Then, let's get four prototypical images from the dataset as style sources.
 
 # %% Loading the test dataset
-test_mnist = ColoredMNIST("data", download=True, train=False)
+test_mnist = ColoredMNIST("extras/data", download=True, train=False)
 prototypes = {}
 
 
