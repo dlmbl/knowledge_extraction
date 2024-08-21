@@ -1,0 +1,7 @@
+git+https://github.com/adjavon/classification.git
+ipykernel
+tqdm
+captum
+git+https://github.com/dlmbl/dlmbl-unet.git
+scikit-learn
+seaborn
