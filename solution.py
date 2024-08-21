@@ -1164,7 +1164,17 @@ plt.show()
 # If you have any questions, feel free to ask them in the chat!
 # And check the Solutions exercise for a definite answer to how these classes are defined!
 
-# %% [markdown] tags=["solution"]
+# %% [markdown]
+# # Bonus!
+# If you have extra time, you can try to break the StarGAN!
+# There are a lot of little things that we did to make sure that it runs correctly - but what if we didn't?
+# Some things you might want to try:
+# - What happens if you don't use the EMA model?
+# - What happens if you change the learning rates?
+# - What happens if you add a Sigmoid activation to the output of the style encoder?
+# See what else you can think of, and see how finnicky training a GAN can be!
+
+## %% [markdown] tags=["solution"]
 # The colors for the classes are sampled from matplotlib colormaps! They are the four seasons: spring, summer, autumn, and winter.
 # Check your style space again to see if you can see the patterns now!
 # %% tags=["solution"]
