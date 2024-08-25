@@ -222,7 +222,7 @@ def visualize_color_attribution(attribution, original_image):
     ax1.imshow(original_image)
     ax1.set_title("Image")
     ax1.axis("off")
-    ax2.imshow(np.abs(attribution))
+    ax2.imshow(np.abs(attribution) / np.max(np.abs(attribution)))
     ax2.set_title("Attribution")
     ax2.axis("off")
     plt.show()
@@ -768,7 +768,6 @@ for ax in axs:
     ax.axis("off")
 plt.show()
 
-# %%
 # %% [markdown] tags=[]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 3</h2>
 # You've now learned the basics of what makes up a StarGAN, and details on how to perform adversarial training.
@@ -814,7 +813,7 @@ for i, ax in enumerate(axs):
 # %% [markdown]
 # Now we need to use these prototypes to create counterfactual images!
 # %% [markdown]
-# <div class="alert alert-block alert-info"><h3>Task 4: Create counterfactuals</h3>
+# <div class="alert alert-block alert-info"><h3>Task 4.1: Create counterfactuals</h3>
 # In the below, we will store the counterfactual images in the `counterfactuals` array.
 #
 # <ul>
@@ -917,11 +916,12 @@ for i in np.random.choice(range(num_images), 4):
 # Let's try putting the two together to see if we can figure out what exactly makes a class.
 #
 # %%
+target_class = 0
 batch_size = 4
 batch = [random_test_mnist[i] for i in range(batch_size)]
 x = torch.stack([b[0] for b in batch])
 y = torch.tensor([b[1] for b in batch])
-x_fake = torch.tensor(counterfactuals[0, :batch_size])
+x_fake = torch.tensor(counterfactuals[target_class, :batch_size])
 x = x.to(device).float()
 y = y.to(device)
 x_fake = x_fake.to(device).float()
@@ -945,7 +945,7 @@ def visualize_color_attribution_and_counterfactual(
     ax1.imshow(counterfactual_image)
     ax1.set_title("Counterfactual")
     ax1.axis("off")
-    ax2.imshow(np.abs(attribution))
+    ax2.imshow(np.abs(attribution) / np.max(np.abs(attribution)))
     ax2.set_title("Attribution")
     ax2.axis("off")
     plt.show()
@@ -967,12 +967,76 @@ for idx in range(batch_size):
 # </ul>
 # </div>
 # %% [markdown]
+# In the lecture, we used the attribution to act as a mask, to gradually go from the original image to the counterfactual image.
+# This allowed us to classify all of the intermediate images, and learn how the class changed over the interpolation.
+# Here we have a much simpler task so we have some advantages:
+# - The counterfactuals are perfect! They already change the bare minimum (trust me).
+# - The changes are not objects, but colors.
+# As such, we will do a much simpler linear interpolation between the images.
+# %% [markdown]
+# <div class="alert alert-block alert-info"><h3>Task 4.2: Interpolation</h3>
+# Let's interpolate between the original image and the counterfactual image.
+# We will create 10 images in between the two, and classify them.
+# </div>
+# %%
+num_interpolations = 15
+alpha = np.linspace(0, 1, num_interpolations + 2)[1:-1]
+interpolated_images = [
+    alpha[i] * x_fake + (1 - alpha[i]) * x for i in range(num_interpolations)
+]
+interpolated_images = torch.stack(interpolated_images)
+interpolated_classifications = [
+    model(interpolated_images[idx].to(device)) for idx in range(num_interpolations)
+]
+# %%
+# Plot the results
+idx = 0
+fig, axs = plt.subplots(
+    batch_size, num_interpolations + 2, figsize=(30, 2 * batch_size)
+)
+for idx in range(batch_size):
+    # Plot the original image
+    axs[idx, 0].imshow(np.transpose(x[idx].cpu().squeeze().numpy(), (1, 2, 0)))
+    axs[idx, 0].axis("off")
+    # Use the class as the title
+    axs[idx, 0].set_title(f"Image: y={y[idx].item()}")
+    # Plot the counterfactual image
+    axs[idx, -1].imshow(np.transpose(x_fake[idx].cpu().squeeze().numpy(), (1, 2, 0)))
+    axs[idx, -1].axis("off")
+    # Use the target class as the title
+    axs[idx, -1].set_title(f"CF: y={target_class}")
+    for i, ax in enumerate(axs[idx][1:-1]):
+        ax.imshow(
+            np.transpose(interpolated_images[i][idx].cpu().squeeze().numpy(), (1, 2, 0))
+        )
+        ax.axis("off")
+        classification = torch.softmax(interpolated_classifications[i][idx], dim=0)
+        # Plot the classification as the title in order source classification | target classification
+        ax.set_title(
+            f"{classification[y[idx]].item():.2f} | {classification[target_class].item():.2f}"
+        )
+# %% [markdown]
+# Take some time to look at the plot we just made.
+# On the very left are the images we randomly chose - it's class is shown in the title.
+# On the very right are the counterfactual images, all of them made with the same prototype as a style source - the target class is shown in the title.
+# In between are the interpolated images - their title shows their classification as "source classification | target classification".
+# This is a lot to take in, so take your time! Once you're ready, we can move on to the questions.
+# %% [markdown]
+# <div class="alert alert-block alert-warning"><h3>Questions</h3>
+# <ul>
+# <li> Do the images change smoothly from one class to another? </li>
+# <li> Can you see any patterns in the changes? </li>
+# <li> What happens when the original image and the counterfactual image are of the same class? </li>
+# <li> Based on this, would you trust this classifier on unseen images more or less than you did before? </li>
+# </ul>
+# %% [markdown]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 4</h2>
 # At this point you have:
 # - Created a StarGAN that can change the class of an image
 # - Evaluated the StarGAN on unseen data
 # - Used the StarGAN to create counterfactual images
 # - Used the counterfactual images to highlight the differences between classes
+# - Interpolated between the images to see how the classifier behaves
 #
 # %% [markdown]
 # # Part 5: Exploring the Style Space, finding the answer
@@ -1100,7 +1164,17 @@ plt.show()
 # If you have any questions, feel free to ask them in the chat!
 # And check the Solutions exercise for a definite answer to how these classes are defined!
 
-# %% [markdown] tags=["solution"]
+# %% [markdown]
+# # Bonus!
+# If you have extra time, you can try to break the StarGAN!
+# There are a lot of little things that we did to make sure that it runs correctly - but what if we didn't?
+# Some things you might want to try:
+# - What happens if you don't use the EMA model?
+# - What happens if you change the learning rates?
+# - What happens if you add a Sigmoid activation to the output of the style encoder?
+# See what else you can think of, and see how finnicky training a GAN can be!
+
+## %% [markdown] tags=["solution"]
 # The colors for the classes are sampled from matplotlib colormaps! They are the four seasons: spring, summer, autumn, and winter.
 # Check your style space again to see if you can see the patterns now!
 # %% tags=["solution"]
