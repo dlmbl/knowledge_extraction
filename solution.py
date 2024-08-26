@@ -53,16 +53,16 @@ for i, ax in enumerate(axs.flatten()):
     ax.axis("off")
 
 # %% [markdown]
-# We have pre-traiend a classifier for you on this dataset. It is the same architecture classifier as you used in the Failure Modes exercise: a `DenseModel`.
+# During the setup you have pre-traiend a classifier on this dataset. It is the same architecture classifier as you used in the Failure Modes exercise: a `DenseModel`.
 # Let's load that classifier now!
 # %% [markdown]
 # <div class="alert alert-block alert-info"><h3>Task 1.1: Load the classifier</h3>
-# We have written a slightly more general version of the `DenseModel` that you used in the previous exercise. Ours requires two inputs:
-# - `input_shape`: the shape of the input images, as a tuple
-# - `num_classes`: the number of classes in the dataset
+# We have written a slightly more general version of the <code>DenseModel</code> that you used in the previous exercise. Ours requires two inputs:
+# <li> <code>input_shape</code>: the shape of the input images, as a tuple </li>
+# <li> <code>num_classes</code>: the number of classes in the dataset </li>
 #
 # Create a dense model with the right inputs and load the weights from the checkpoint.
-# <div>
+# </div>
 # %% tags=["task"]
 import torch
 from classifier.model import DenseModel
@@ -203,7 +203,7 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 
 # %% [markdown]
 #
-# The attributions are shown as a heatmap. The brighter the pixel, the more important this attribution method thinks that it is.
+# The attributions are shown as a heatmap. The closer to 1 the pixel value, the more important this attribution method thinks that it is.
 # As you can see, it is pretty good at recognizing the number within the image.
 # As we know, however, it is not the digit itself that is important for the classification, it is the color!
 # Although the method is picking up really well on the region of interest, it would be difficult to conclude from this that it is the color that matters.
@@ -234,7 +234,7 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 
 # %% [markdown]
 # We get some better clues when looking at the attributions in color.
-# The highlighting doesn't just happen in the region with number, but also seems to hapen in a channel that matches the color of the image.
+# The highlighting doesn't just happen in the region with number, but also seems to happen in a channel that matches the color of the image.
 # Just based on this, however, we don't get much more information than we got from the images themselves.
 #
 # If we didn't know in advance, it is unclear whether the color or the number is the most important feature for the classifier.
@@ -270,11 +270,12 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 random_baselines = ...  # TODO Change
 # Generate the attributions
 attributions_random = integrated_gradients.attribute(...)  # TODO Change
+attributions_random = attributions_random.cpu().numpy()
 
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_random, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
-    visualize_attribution(attr, im)
+    visualize_color_attribution(attr, im)
 
 # %% tags=["solution"]
 #########################
@@ -286,9 +287,9 @@ random_baselines = torch.rand_like(x)
 attributions_random = integrated_gradients.attribute(
     x, target=y, baselines=random_baselines
 )
-
+attributions_random = attributions_random.cpu().numpy()
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_random, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
@@ -306,8 +307,9 @@ blurred_baselines = ...  # TODO Create blurred version of the images
 # Generate the attributions
 attributions_blurred = integrated_gradients.attribute(...)  # TODO Fill
 
+attributions_blurred = attributions_blurred.cpu().numpy()
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_blurred, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
@@ -324,8 +326,10 @@ attributions_blurred = integrated_gradients.attribute(
     x, target=y, baselines=blurred_baselines
 )
 
+attributions_blurred = attributions_blurred.cpu().numpy()
+
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_blurred, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
@@ -349,7 +353,7 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 2</h2>
-# Let us know on the exercise chat when you've reached this point!
+# Put up your green sticky note when you've reached this point!
 #
 # At this point we have:
 #
@@ -371,9 +375,9 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 # **What is a counterfactual?**
 #
 # You've learned about adversarial examples in the lecture on failure modes. These are the imperceptible or noisy changes to an image that drastically changes a classifier's opinion.
-# Counterfactual explanations are the useful cousins of adversarial examples. They are *perceptible* and *informative* changes to an image that changes a classifier's opinion.
+# Counterfactual explanations are the useful cousins of adversarial examples. They are *perceptible* and *informative* changes to an image that change a classifier's opinion.
 #
-# In the image below you can see the difference between the two. In the first column are MNIST images along with their classifictaions, and in the second column are counterfactual explanations to *change* that class. You can see that in both cases a human being would (hopefully) agree with the new classification. By comparing the two columns, we can therefore begin to define what makes each digit special.
+# In the image below you can see the difference between the two. In the first column are (non-color) MNIST images along with their classifications, and in the second column are counterfactual explanations to *change* that class. You can see that in both cases a human being would (hopefully) agree with the new classification. By comparing the two columns, we can therefore begin to define what makes each digit special.
 #
 # In contrast, the third and fourth columns show an MNIST image and a corresponding adversarial example. Here the network returns a prediction that most human beings (who aren't being facetious) would strongly disagree with.
 #
@@ -429,7 +433,7 @@ class Generator(nn.Module):
 #
 # Given the Generator structure above, fill in the missing parts for the unet and the style mapping.
 # %% tags=["task"]
-style_size = ...  # TODO choose a size for the style space
+style_size = 3
 unet_depth = ...  # TODO Choose a depth for the UNet
 style_encoder = DenseModel(
     input_shape=..., num_classes=...  # How big is the style space?
@@ -447,7 +451,7 @@ generator = Generator(unet, style_encoder=style_encoder)
 # %% [markdown] tags=[]
 # <div class="alert alert-block alert-warning"><h3>Hyper-parameter choices</h3>
 # <ul>
-# <li>Are any of the hyperparameters you choose above constrained in some way?</li>
+# <li>Are any of the hyperparameters above constrained in some way?</li>
 # <li>What would happen if you chose a depth of 10 for the UNet?</li>
 # <li>Is there a minimum size for the style space? Why or why not?</li>
 # </ul>
@@ -555,6 +559,20 @@ def copy_parameters(source_model, target_model):
 # %%
 generator_ema = Generator(deepcopy(unet), style_encoder=deepcopy(style_encoder))
 generator_ema = generator_ema.to(device)
+
+# %% [markdown]
+# <div class="alert alert-block alert-success"><h2>Checkpoint 3</h2>
+# Put up your green sticky note when you've reached this point!
+#
+# At this point we have:
+#
+# - Loaded a classifier that classifies MNIST-like images by color, but we don't know how!
+# - Tried applying Integrated Gradients to find out what the classifier is looking at - with little success.
+# - Discovered the effect of changing the baseline on the output of integrated gradients.
+# - Defined the hyperparameters for a StarGAN to create counterfactual images.
+#
+# Next up, we will define the training loop for the StarGAN.
+# </div>
 
 # %% [markdown] tags=[]
 # <div class="alert alert-banner alert-info"><h4>Task 3.3: Training!</h4>
@@ -774,7 +792,7 @@ plt.show()
 # The same method can be used to create a StarGAN with different basic elements.
 # For example, you can change the archictecture of the generators, or of the discriminator to better fit your data in the future.
 #
-# You know the drill... let us know on the exercise chat when you have arrived here!
+# You know the drill... put up your green sticky note when you have arrived here!
 # </div>
 
 # %% [markdown] tags=[]
