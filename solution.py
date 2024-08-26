@@ -53,16 +53,16 @@ for i, ax in enumerate(axs.flatten()):
     ax.axis("off")
 
 # %% [markdown]
-# We have pre-traiend a classifier for you on this dataset. It is the same architecture classifier as you used in the Failure Modes exercise: a `DenseModel`.
+# During the setup you have pre-traiend a classifier on this dataset. It is the same architecture classifier as you used in the Failure Modes exercise: a `DenseModel`.
 # Let's load that classifier now!
 # %% [markdown]
 # <div class="alert alert-block alert-info"><h3>Task 1.1: Load the classifier</h3>
-# We have written a slightly more general version of the `DenseModel` that you used in the previous exercise. Ours requires two inputs:
-# - `input_shape`: the shape of the input images, as a tuple
-# - `num_classes`: the number of classes in the dataset
+# We have written a slightly more general version of the <code>DenseModel</code> that you used in the previous exercise. Ours requires two inputs:
+# <li> <code>input_shape</code>: the shape of the input images, as a tuple </li>
+# <li> <code>num_classes</code>: the number of classes in the dataset </li>
 #
 # Create a dense model with the right inputs and load the weights from the checkpoint.
-# <div>
+# </div>
 # %% tags=["task"]
 import torch
 from classifier.model import DenseModel
@@ -112,7 +112,15 @@ sns.heatmap(cm, annot=True, fmt=".2f")
 plt.ylabel("True")
 plt.xlabel("Predicted")
 plt.show()
-
+# %% [markdown]
+# <div class="alert alert-block alert-success"><h2>Checkpoint 1</h2>
+#
+# At this point we have:
+#
+# - Loaded a classifier that classifies MNIST-like images by color, but we don't know how!
+#
+# We will not stop her as a group, it's just the end of Part 1. So continue on with part 2 right away.
+# </div>
 # %% [markdown]
 # # Part 2: Using Integrated Gradients to find what the classifier knows
 #
@@ -203,7 +211,7 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 
 # %% [markdown]
 #
-# The attributions are shown as a heatmap. The brighter the pixel, the more important this attribution method thinks that it is.
+# The attributions are shown as a heatmap. The closer to 1 the pixel value, the more important this attribution method thinks that it is.
 # As you can see, it is pretty good at recognizing the number within the image.
 # As we know, however, it is not the digit itself that is important for the classification, it is the color!
 # Although the method is picking up really well on the region of interest, it would be difficult to conclude from this that it is the color that matters.
@@ -234,7 +242,7 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 
 # %% [markdown]
 # We get some better clues when looking at the attributions in color.
-# The highlighting doesn't just happen in the region with number, but also seems to hapen in a channel that matches the color of the image.
+# The highlighting doesn't just happen in the region with number, but also seems to happen in a channel that matches the color of the image.
 # Just based on this, however, we don't get much more information than we got from the images themselves.
 #
 # If we didn't know in advance, it is unclear whether the color or the number is the most important feature for the classifier.
@@ -270,11 +278,12 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 random_baselines = ...  # TODO Change
 # Generate the attributions
 attributions_random = integrated_gradients.attribute(...)  # TODO Change
+attributions_random = attributions_random.cpu().numpy()
 
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_random, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
-    visualize_attribution(attr, im)
+    visualize_color_attribution(attr, im)
 
 # %% tags=["solution"]
 #########################
@@ -286,9 +295,9 @@ random_baselines = torch.rand_like(x)
 attributions_random = integrated_gradients.attribute(
     x, target=y, baselines=random_baselines
 )
-
+attributions_random = attributions_random.cpu().numpy()
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_random, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
@@ -306,8 +315,9 @@ blurred_baselines = ...  # TODO Create blurred version of the images
 # Generate the attributions
 attributions_blurred = integrated_gradients.attribute(...)  # TODO Fill
 
+attributions_blurred = attributions_blurred.cpu().numpy()
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_blurred, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
@@ -324,8 +334,10 @@ attributions_blurred = integrated_gradients.attribute(
     x, target=y, baselines=blurred_baselines
 )
 
+attributions_blurred = attributions_blurred.cpu().numpy()
+
 # Plotting
-for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
+for attr, im, lbl in zip(attributions_blurred, x.cpu().numpy(), y.cpu().numpy()):
     print(f"Class {lbl}")
     visualize_color_attribution(attr, im)
 
@@ -349,7 +361,7 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 2</h2>
-# Let us know on the exercise chat when you've reached this point!
+# Put up your green sticky note when you've reached this point!
 #
 # At this point we have:
 #
@@ -371,9 +383,9 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 # **What is a counterfactual?**
 #
 # You've learned about adversarial examples in the lecture on failure modes. These are the imperceptible or noisy changes to an image that drastically changes a classifier's opinion.
-# Counterfactual explanations are the useful cousins of adversarial examples. They are *perceptible* and *informative* changes to an image that changes a classifier's opinion.
+# Counterfactual explanations are the useful cousins of adversarial examples. They are *perceptible* and *informative* changes to an image that change a classifier's opinion.
 #
-# In the image below you can see the difference between the two. In the first column are MNIST images along with their classifictaions, and in the second column are counterfactual explanations to *change* that class. You can see that in both cases a human being would (hopefully) agree with the new classification. By comparing the two columns, we can therefore begin to define what makes each digit special.
+# In the image below you can see the difference between the two. In the first column are (non-color) MNIST images along with their classifications, and in the second column are counterfactual explanations to *change* that class. You can see that in both cases a human being would (hopefully) agree with the new classification. By comparing the two columns, we can therefore begin to define what makes each digit special.
 #
 # In contrast, the third and fourth columns show an MNIST image and a corresponding adversarial example. Here the network returns a prediction that most human beings (who aren't being facetious) would strongly disagree with.
 #
@@ -391,8 +403,8 @@ for attr, im, lbl in zip(attributions, x.cpu().numpy(), y.cpu().numpy()):
 #
 # We will not be using the random latent code (green, in the figure), so the model we use is made up of three networks:
 # - The generator - this will be the bulk of the model, and will be responsible for transforming the images: we're going to use a `UNet`
-# - The discriminator - this will be responsible for telling the difference between real and fake images: we're going to use a `DenseModel`
 # - The style encoder - this will be responsible for encoding the style of the image: we're going to use a `DenseModel`
+# - The discriminator - this will be responsible for telling the difference between real and fake images: we're going to use a `DenseModel`
 #
 # Let's start by creating these!
 # %%
@@ -429,7 +441,7 @@ class Generator(nn.Module):
 #
 # Given the Generator structure above, fill in the missing parts for the unet and the style mapping.
 # %% tags=["task"]
-style_size = ...  # TODO choose a size for the style space
+style_size = 3
 unet_depth = ...  # TODO Choose a depth for the UNet
 style_encoder = DenseModel(
     input_shape=..., num_classes=...  # How big is the style space?
@@ -447,7 +459,7 @@ generator = Generator(unet, style_encoder=style_encoder)
 # %% [markdown] tags=[]
 # <div class="alert alert-block alert-warning"><h3>Hyper-parameter choices</h3>
 # <ul>
-# <li>Are any of the hyperparameters you choose above constrained in some way?</li>
+# <li>Are any of the hyperparameters above constrained in some way?</li>
 # <li>What would happen if you chose a depth of 10 for the UNet?</li>
 # <li>Is there a minimum size for the style space? Why or why not?</li>
 # </ul>
@@ -556,15 +568,16 @@ def copy_parameters(source_model, target_model):
 generator_ema = Generator(deepcopy(unet), style_encoder=deepcopy(style_encoder))
 generator_ema = generator_ema.to(device)
 
+
 # %% [markdown] tags=[]
 # <div class="alert alert-banner alert-info"><h4>Task 3.3: Training!</h4>
 # You were given several different options in the training code below. In each case, one of the options will work, and the other will not.
 # Comment out the option that you think will not work.
 # <ul>
-#   <li>Choose the values for `set_requires_grad`. Hint: which part of the code is training the generator? Which part is training the discriminator</li>
-#   <li>Choose the values of `set_requires_grad`, again. Hint: you may want to switch</li>
+#   <li>Choose the values for <code>set_requires_grad</code>. Hint: which part of the code is training the generator? Which part is training the discriminator</li>
+#   <li>Choose the values of <code>set_requires_grad</code>, again. Hint: you may want to switch</li>
 #   <li>Choose the sign of the discriminator loss. Hint: what does the discriminator want to do?</li>
-# . <li>Apply the EMA update. Hint: which model do you want to update? You can look again at the code we wrote above.</li>
+#   <li>Apply the EMA update. Hint: which model do you want to update? You can look again at the code we wrote above.</li>
 # </ul>
 # Let's train the StarGAN one batch a time.
 # While you watch the model train, consider whether you think it will be successful at generating counterfactuals in the number of steps we give it. What is the minimum number of iterations you think are needed for this to work, and how much time do yo uthink it will take?
@@ -774,7 +787,7 @@ plt.show()
 # The same method can be used to create a StarGAN with different basic elements.
 # For example, you can change the archictecture of the generators, or of the discriminator to better fit your data in the future.
 #
-# You know the drill... let us know on the exercise chat when you have arrived here!
+# You know the drill... put up your green sticky note when you have arrived here!
 # </div>
 
 # %% [markdown] tags=[]
@@ -831,20 +844,20 @@ counterfactuals = np.zeros((4, num_images, 3, 28, 28))
 predictions = []
 source_labels = []
 target_labels = []
+with torch.inference_mode():
+    for i, (x, y) in tqdm(enumerate(random_test_mnist), total=num_images):
+        for lbl in range(4):
+            # TODO Create the counterfactual
+            x_fake = generator(x.unsqueeze(0).to(device), ...)
+            # TODO Predict the class of the counterfactual image
+            pred = model(...)
 
-for i, (x, y) in tqdm(enumerate(random_test_mnist), total=num_images):
-    for lbl in range(4):
-        # TODO Create the counterfactual
-        x_fake = generator(x.unsqueeze(0).to(device), ...)
-        # TODO Predict the class of the counterfactual image
-        pred = model(...)
-
-        # TODO Store the source and target labels
-        source_labels.append(...)  # The original label of the image
-        target_labels.append(...)  # The desired label of the counterfactual image
-        # Store the counterfactual image and prediction
-        counterfactuals[lbl][i] = x_fake.cpu().detach().numpy()
-        predictions.append(pred.argmax().item())
+            # TODO Store the source and target labels
+            source_labels.append(...)  # The original label of the image
+            target_labels.append(...)  # The desired label of the counterfactual image
+            # Store the counterfactual image and prediction
+            counterfactuals[lbl][i] = x_fake.cpu().detach().numpy()
+            predictions.append(pred.argmax().item())
 # %% tags=["solution"]
 num_images = 1000
 random_test_mnist = torch.utils.data.Subset(
@@ -855,22 +868,22 @@ counterfactuals = np.zeros((4, num_images, 3, 28, 28))
 predictions = []
 source_labels = []
 target_labels = []
+with torch.inference_mode():
+    for i, (x, y) in tqdm(enumerate(random_test_mnist), total=num_images):
+        for lbl in range(4):
+            # Create the counterfactual
+            x_fake = generator(
+                x.unsqueeze(0).to(device), prototypes[lbl].unsqueeze(0).to(device)
+            )
+            # Predict the class of the counterfactual image
+            pred = model(x_fake)
 
-for i, (x, y) in tqdm(enumerate(random_test_mnist), total=num_images):
-    for lbl in range(4):
-        # Create the counterfactual
-        x_fake = generator(
-            x.unsqueeze(0).to(device), prototypes[lbl].unsqueeze(0).to(device)
-        )
-        # Predict the class of the counterfactual image
-        pred = model(x_fake)
-
-        # Store the source and target labels
-        source_labels.append(y)  # The original label of the image
-        target_labels.append(lbl)  # The desired label of the counterfactual image
-        # Store the counterfactual image and prediction
-        counterfactuals[lbl][i] = x_fake.cpu().detach().numpy()
-        predictions.append(pred.argmax().item())
+            # Store the source and target labels
+            source_labels.append(y)  # The original label of the image
+            target_labels.append(lbl)  # The desired label of the counterfactual image
+            # Store the counterfactual image and prediction
+            counterfactuals[lbl][i] = x_fake.cpu().detach().numpy()
+            predictions.append(pred.argmax().item())
 
 # %% [markdown] tags=[]
 # Let's plot the confusion matrix for the counterfactual images.
@@ -1089,7 +1102,7 @@ plt.legend()
 plt.show()
 
 # %% [markdown]
-# <div class="alert alert-block alert-info"><h3>Task 5.1: Adding color to the style space</h3>
+# <div class="alert alert-block alert-info"><h3>Task 5.2: Adding color to the style space</h3>
 # We know that color is important. Does interpreting the style space as colors help us understand better?
 #
 # Let's use the style space to color the PCA plot.
@@ -1120,7 +1133,7 @@ plt.show()
 # <li> Can you see any patterns in the colors? Is the space smooth, for example?</li>
 # </ul>
 # %% [markdown]
-# <div class="alert alert-block alert-info"><h3>Task 5.2: Using the images to color the style space</h3>
+# <div class="alert alert-block alert-info"><h3>Task 5.3: Using the images to color the style space</h3>
 # Finally, let's just use the colors from the images themselves!
 # The maximum value in the image (since they are "black-and-color") can be used as a color!
 #
@@ -1143,7 +1156,6 @@ for i in range(4):
 plt.legend()
 plt.show()
 
-# %%
 # %% [markdown]
 # <div class="alert alert-block alert-warning"><h3>Questions</h3>
 # <ul>
@@ -1169,14 +1181,15 @@ plt.show()
 # If you have extra time, you can try to break the StarGAN!
 # There are a lot of little things that we did to make sure that it runs correctly - but what if we didn't?
 # Some things you might want to try:
-# - What happens if you don't use the EMA model?
-# - What happens if you change the learning rates?
-# - What happens if you add a Sigmoid activation to the output of the style encoder?
+# <li> What happens if you don't use the EMA model? </li>
+# <li> What happens if you change the learning rates? </li>
+# <li> What happens if you add a Sigmoid activation to the output of the style encoder? </li>
 # See what else you can think of, and see how finnicky training a GAN can be!
 
-## %% [markdown] tags=["solution"]
+# %% [markdown] tags=["solution"]
 # The colors for the classes are sampled from matplotlib colormaps! They are the four seasons: spring, summer, autumn, and winter.
 # Check your style space again to see if you can see the patterns now!
+
 # %% tags=["solution"]
 # Let's plot the colormaps
 import matplotlib as mpl
