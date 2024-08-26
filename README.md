@@ -31,7 +31,7 @@ This is a GPU-hungry exercise so you're going to need all the GPU memory you can
 Next, run the setup script. It might take a few minutes.
 ```
 cd 08_knowledge_extraction
-sh setup.sh
+bash setup.sh
 ```
 This will:
 - Create a `conda` environment for this exercise
