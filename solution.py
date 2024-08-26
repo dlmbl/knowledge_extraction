@@ -967,7 +967,7 @@ def visualize_color_attribution_and_counterfactual(
 # %%
 for idx in range(batch_size):
     print("Source class:", y[idx].item())
-    print("Target class:", 0)
+    print("Target class:", target_class)
     visualize_color_attribution_and_counterfactual(
         attributions[idx].cpu().numpy(), x[idx].cpu().numpy(), x_fake[idx].cpu().numpy()
     )
@@ -980,6 +980,16 @@ for idx in range(batch_size):
 # </ul>
 # </div>
 # %% [markdown]
+# By now you will have hopefully noticed that it isn't the exact color of the image that determines its class, but that two images with a very similar color can be of different classes!
+#
+# Here are two examples of image-counterfactual-attribution triplets.
+# You'll notice that they are *very* similar in every way! But one set is different classes, and one set is the same class!
+# 
+# ![same_class](assets/same_class.png)
+# ![diff_class](assets/diff_class.png)
+#
+# We are missing a crucial step of the explanation pipeline: a quantification of how the class changes over the interpolation. 
+#
 # In the lecture, we used the attribution to act as a mask, to gradually go from the original image to the counterfactual image.
 # This allowed us to classify all of the intermediate images, and learn how the class changed over the interpolation.
 # Here we have a much simpler task so we have some advantages:
@@ -1045,25 +1055,15 @@ for idx in range(batch_size):
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 4</h2>
 # At this point you have:
-# - Created a StarGAN that can change the class of an image
-# - Evaluated the StarGAN on unseen data
-# - Used the StarGAN to create counterfactual images
-# - Used the counterfactual images to highlight the differences between classes
-# - Interpolated between the images to see how the classifier behaves
-#
+# <ul>
+# <li> Created a StarGAN that can change the class of an image </li>
+# <li> Evaluated the StarGAN on unseen data </li>
+# <li> Used the StarGAN to create counterfactual images </li>
+# <li> Used the counterfactual images to highlight the differences between classes </li>
+# <li> Interpolated between the images to see how the classifier behaves </li>
+# </ul>
 # %% [markdown]
 # # Part 5: Exploring the Style Space, finding the answer
-# By now you will have hopefully noticed that it isn't the exact color of the image that determines its class, but that two images with a very similar color can be of different classes!
-#
-# Here is an example of two images that are very similar in color, but are of different classes.
-# ![same_color_diff_class](assets/same_color_diff_class.png)
-# While both of the images are yellow, the attribution tells us (if you squint!) that one of the yellows has slightly more blue in it!
-#
-# Conversely, here is an example of two images with very different colors, but that are of the same class:
-# ![same_class_diff_color](assets/same_class_diff_color.png)
-# Here the attribution is empty! Using the discriminative attribution we can see that the significant color change doesn't matter at all!
-#
-#
 # So color is important... but not always? What's going on!?
 # There is a final piece of information that we can use to solve the puzzle: the style space.
 # %% [markdown]
@@ -1167,11 +1167,13 @@ plt.show()
 # <div class="alert alert-block alert-success"><h2>Checkpoint 5</h2>
 # Congratulations! You have made it to the end of the exercise!
 # You have:
-# - Created a StarGAN that can change the class of an image
-# - Evaluated the StarGAN on unseen data
-# - Used the StarGAN to create counterfactual images
-# - Used the counterfactual images to highlight the differences between classes
-# - Used the style space to understand the differences between classes
+# <ul>
+# <li> Created a StarGAN that can change the class of an image </li>
+# <li> Evaluated the StarGAN on unseen data </li>
+# <li> Used the StarGAN to create counterfactual images </li>
+# <li> Used the counterfactual images to highlight the differences between classes </li>
+# <li> Used the style space to understand the differences between classes </li>
+# </ul>
 #
 # If you have any questions, feel free to ask them in the chat!
 # And check the Solutions exercise for a definite answer to how these classes are defined!
