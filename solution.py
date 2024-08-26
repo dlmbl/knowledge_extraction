@@ -1186,11 +1186,11 @@ plt.show()
 # <li> What happens if you add a Sigmoid activation to the output of the style encoder? </li>
 # See what else you can think of, and see how finnicky training a GAN can be!
 
-## %% [markdown] tags=["solution"]
+# %% [markdown] tags=["solution"]
 # The colors for the classes are sampled from matplotlib colormaps! They are the four seasons: spring, summer, autumn, and winter.
 # Check your style space again to see if you can see the patterns now!
 
-## %% tags=["solution"]
+# %% tags=["solution"]
 # Let's plot the colormaps
 import matplotlib as mpl
 import numpy as np
