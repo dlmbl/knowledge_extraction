@@ -395,8 +395,8 @@ for attr, im, lbl in zip(attributions_blurred, x.cpu().numpy(), y.cpu().numpy())
 #
 # We will not be using the random latent code (green, in the figure), so the model we use is made up of three networks:
 # - The generator - this will be the bulk of the model, and will be responsible for transforming the images: we're going to use a `UNet`
-# - The discriminator - this will be responsible for telling the difference between real and fake images: we're going to use a `DenseModel`
 # - The style encoder - this will be responsible for encoding the style of the image: we're going to use a `DenseModel`
+# - The discriminator - this will be responsible for telling the difference between real and fake images: we're going to use a `DenseModel`
 #
 # Let's start by creating these!
 # %%
@@ -579,10 +579,10 @@ generator_ema = generator_ema.to(device)
 # You were given several different options in the training code below. In each case, one of the options will work, and the other will not.
 # Comment out the option that you think will not work.
 # <ul>
-#   <li>Choose the values for `set_requires_grad`. Hint: which part of the code is training the generator? Which part is training the discriminator</li>
-#   <li>Choose the values of `set_requires_grad`, again. Hint: you may want to switch</li>
+#   <li>Choose the values for <code>set_requires_grad</code>. Hint: which part of the code is training the generator? Which part is training the discriminator</li>
+#   <li>Choose the values of <code>set_requires_grad</code>, again. Hint: you may want to switch</li>
 #   <li>Choose the sign of the discriminator loss. Hint: what does the discriminator want to do?</li>
-# . <li>Apply the EMA update. Hint: which model do you want to update? You can look again at the code we wrote above.</li>
+#   <li>Apply the EMA update. Hint: which model do you want to update? You can look again at the code we wrote above.</li>
 # </ul>
 # Let's train the StarGAN one batch a time.
 # While you watch the model train, consider whether you think it will be successful at generating counterfactuals in the number of steps we give it. What is the minimum number of iterations you think are needed for this to work, and how much time do yo uthink it will take?
