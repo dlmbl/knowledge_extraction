@@ -1102,7 +1102,7 @@ plt.legend()
 plt.show()
 
 # %% [markdown]
-# <div class="alert alert-block alert-info"><h3>Task 5.1: Adding color to the style space</h3>
+# <div class="alert alert-block alert-info"><h3>Task 5.2: Adding color to the style space</h3>
 # We know that color is important. Does interpreting the style space as colors help us understand better?
 #
 # Let's use the style space to color the PCA plot.
@@ -1133,7 +1133,7 @@ plt.show()
 # <li> Can you see any patterns in the colors? Is the space smooth, for example?</li>
 # </ul>
 # %% [markdown]
-# <div class="alert alert-block alert-info"><h3>Task 5.2: Using the images to color the style space</h3>
+# <div class="alert alert-block alert-info"><h3>Task 5.3: Using the images to color the style space</h3>
 # Finally, let's just use the colors from the images themselves!
 # The maximum value in the image (since they are "black-and-color") can be used as a color!
 #
