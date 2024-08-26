@@ -1055,12 +1055,13 @@ for idx in range(batch_size):
 # %% [markdown]
 # <div class="alert alert-block alert-success"><h2>Checkpoint 4</h2>
 # At this point you have:
-# - Created a StarGAN that can change the class of an image
-# - Evaluated the StarGAN on unseen data
-# - Used the StarGAN to create counterfactual images
-# - Used the counterfactual images to highlight the differences between classes
-# - Interpolated between the images to see how the classifier behaves
-#
+# <ul>
+# <li> Created a StarGAN that can change the class of an image </li>
+# <li> Evaluated the StarGAN on unseen data </li>
+# <li> Used the StarGAN to create counterfactual images </li>
+# <li> Used the counterfactual images to highlight the differences between classes </li>
+# <li> Interpolated between the images to see how the classifier behaves </li>
+# </ul>
 # %% [markdown]
 # # Part 5: Exploring the Style Space, finding the answer
 # So color is important... but not always? What's going on!?
@@ -1166,11 +1167,13 @@ plt.show()
 # <div class="alert alert-block alert-success"><h2>Checkpoint 5</h2>
 # Congratulations! You have made it to the end of the exercise!
 # You have:
-# - Created a StarGAN that can change the class of an image
-# - Evaluated the StarGAN on unseen data
-# - Used the StarGAN to create counterfactual images
-# - Used the counterfactual images to highlight the differences between classes
-# - Used the style space to understand the differences between classes
+# <ul>
+# <li> Created a StarGAN that can change the class of an image </li>
+# <li> Evaluated the StarGAN on unseen data </li>
+# <li> Used the StarGAN to create counterfactual images </li>
+# <li> Used the counterfactual images to highlight the differences between classes </li>
+# <li> Used the style space to understand the differences between classes </li>
+# </ul>
 #
 # If you have any questions, feel free to ask them in the chat!
 # And check the Solutions exercise for a definite answer to how these classes are defined!
