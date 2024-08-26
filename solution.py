@@ -112,7 +112,15 @@ sns.heatmap(cm, annot=True, fmt=".2f")
 plt.ylabel("True")
 plt.xlabel("Predicted")
 plt.show()
-
+# %% [markdown]
+# <div class="alert alert-block alert-success"><h2>Checkpoint 1</h2>
+#
+# At this point we have:
+#
+# - Loaded a classifier that classifies MNIST-like images by color, but we don't know how!
+#
+# We will not stop her as a group, it's just the end of Part 1. So continue on with part 2 right away.
+# </div>
 # %% [markdown]
 # # Part 2: Using Integrated Gradients to find what the classifier knows
 #
@@ -560,19 +568,6 @@ def copy_parameters(source_model, target_model):
 generator_ema = Generator(deepcopy(unet), style_encoder=deepcopy(style_encoder))
 generator_ema = generator_ema.to(device)
 
-# %% [markdown]
-# <div class="alert alert-block alert-success"><h2>Checkpoint 3</h2>
-# Put up your green sticky note when you've reached this point!
-#
-# At this point we have:
-#
-# - Loaded a classifier that classifies MNIST-like images by color, but we don't know how!
-# - Tried applying Integrated Gradients to find out what the classifier is looking at - with little success.
-# - Discovered the effect of changing the baseline on the output of integrated gradients.
-# - Defined the hyperparameters for a StarGAN to create counterfactual images.
-#
-# Next up, we will define the training loop for the StarGAN.
-# </div>
 
 # %% [markdown] tags=[]
 # <div class="alert alert-banner alert-info"><h4>Task 3.3: Training!</h4>
